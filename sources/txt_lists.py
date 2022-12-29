@@ -11,15 +11,14 @@ class TxtLists:
         self.usable_proxies = usable_proxies
         pass
     
-    def _proxy_types_to_abbr_str(self, type_arr):
-        if PROXY_PROTOC["socks5"] in type_arr: return "socks5"
-        if PROXY_PROTOC["socks4"] in type_arr: return "socks4"
-        return "http"
+    def _proxy_type_to_abbr_str(self, protoc: int):
+        abbr = list(PROXY_PROTOC.keys())[list(PROXY_PROTOC.values()).index(protoc)]
+        return (abbr if abbr is not "https" else "http")
 
     def _gen_url(self, protoc: int):
         return (
             f"https://raw.githubusercontent.com/TheSpeedX/SOCKS-List/master/"
-            f"{self._proxy_types_to_abbr_str(constraints['protocs']) if constraints.get('protocs', None) is not None else self._current_auto_protoc}"
+            f"{self._proxy_type_to_abbr_str(protoc)}"
             f".txt"
         )
 
@@ -27,21 +26,23 @@ class TxtLists:
         protocs_to_scan = []
         if constraints.get('protocs', None) != None:
             protocs_to_scan = constraints["protocs"]
-        url = self._gen_url(constraints)
-        result = requests.get(url)
+        else: protocs_to_scan = []
         proxies = []
-        for addr in result.text.splitlines():
-            proxies.append({
-                "ip": addr.split(":")[0],
-                "port": int(addr.split(":")[1]),
-                "country": "",
-                "city": "",
-                "region": "",
-                "speed": -1,
-                "protocs": [PROXY_PROTOC[self._proxy_types_to_abbr_str(constraints['protocs']) if constraints.get('protocs', None) is not None else 'socks5']],
-                "anon": -1,
-                "lc": datetime.datetime.now()-datetime.timedelta(minutes=1440)
-            })
+        for protoc_num in protocs_to_scan:
+            url = self._gen_url(protoc_num)
+            result = requests.get(url)
+            for addr in result.text.splitlines():
+                proxies.append({
+                    "ip": addr.split(":")[0],
+                    "port": int(addr.split(":")[1]),
+                    "country": "",
+                    "city": "",
+                    "region": "",
+                    "speed": -1,
+                    "protocs": [PROXY_PROTOC[self._proxy_types_to_abbr_str(constraints['protocs']) if constraints.get('protocs', None) is not None else 'socks5']],
+                    "anon": -1,
+                    "lc": datetime.datetime.now()-datetime.timedelta(minutes=1440)
+                })
         return proxies
     
     def update_usable_proxies(self, usable):
