@@ -55,7 +55,8 @@ pac_template = Template(open("pac_template.js", "r").read())
 
 scan_q = queue.Queue()
 for proxy in current_proxies:
-    if int((datetime.datetime.now()-datetime.datetime.fromisoformat(proxy["lc"])).seconds/60) > 1:
+    proxy["lc"] = datetime.datetime.fromisoformat(proxy["lc"])
+    if int((datetime.datetime.now()-proxy["lc"]).seconds/60) >= 30:
         scan_q.put(proxy)
 
 def save():
@@ -206,4 +207,5 @@ def get_constraints():
 threading.Thread(target=bkgd_scan).start()
 for i in range(3): #3 Background scan threads
     threading.Thread(target=bkgd_check).start()
+threading.Thread(target=bkgd_check_driver).start()
 threading.Thread(target=bkgd_save).start()
