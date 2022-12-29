@@ -3,3 +3,4 @@ fastapi==0.88.0
 pycountry==22.3.5
 requests==2.27.1
 uvicorn==0.20.0
+PySocks==1.7.1
