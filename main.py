@@ -112,7 +112,7 @@ def bkgd_check():
 def bkgd_save():
     while True:
         json.dump(current_proxies, open("save.json", "w+"), default=str)
-        time.sleep(30)
+        time.sleep(5*60)
 
 @app.get("/proxy/")
 def return_proxy(country: str = None,
