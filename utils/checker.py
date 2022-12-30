@@ -28,6 +28,8 @@ class Checker:
                 proxy["city"] = info["city"]
                 proxy["lc"] = datetime.datetime.now()
                 proxy["speed"] = res.elapsed.total_seconds() if proxy["speed"] == -1 else proxy["speed"]
+                proxy["lat"] = info["lat"]
+                proxy["lon"] = info["lon"]
                 return proxy
         except requests.exceptions.ProxyError:
             return False

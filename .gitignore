@@ -153,3 +153,4 @@ cython_debug/
 
 #SPecificallty this project:
 save.json
+.DS_Store

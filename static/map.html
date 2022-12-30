@@ -2,10 +2,206 @@
 <html>
     <head>
         <title>PN</title>
-        <script src="https://raw.githubusercontent.com/w8r/leaflet-area-select/master/src/Map.SelectArea.js"></script>
-        <script src="https://unpkg.com/leaflet@1.6.0/dist/leaflet-src.js "
+        <link rel="stylesheet" href="./checkbox-dropdown.css"/>
+        <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css" integrity="sha256-kLaT2GOSpHechhsozzB+flnD+zUyjE2LlfWPgU04xyI=" crossorigin=""/>
+        <script type="text/javascript" src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js" integrity="sha256-WBkoXOwTeyKclOHuWtc+i2uENFpDZ9YPdf5Hf+D7ewM=" crossorigin=""></script>
+        <script type="text/javascript" src="https://raw.githubusercontent.com/w8r/leaflet-area-select/master/src/Map.SelectArea.js"></script>
+        <style>
+            body {
+                margin: 0px;
+            }
+            #filters {
+                background-color: #333;
+                overflow: hidden;
+                color: #ffffff;
+                height: 4vh;
+            }
+            #filters div {
+                float: left;
+                margin-left: 1%
+            }
+            #map {
+                position: absolute;
+                height: 91vh;
+                width: 85vw;
+                bottom: 5vh;
+                right: 0vw;
+            }
+            #bottom-bar {
+                position: absolute;
+                background-color: #333;
+                overflow: hidden;
+                color: #ffffff;
+                height: 5vh;
+                bottom: 0vh;
+                width: 100vw;
+            }
+        </style>
     </head>
     <body>
-
+        <div id="filters">
+            <div id="country-filter" style="margin-left: 3%;">
+                <div id="country-list" class="dropdown-check-list" tabindex="100" style="background-color: #4f4f4e;">
+                    <span class="anchor">Country</span>
+                    <ul id="country-items" class="items">
+                        <li><input type="checkbox" />All Countries</li>
+                    </ul>
+                </div>
+                <script>
+                var checkList = document.getElementById('country-list');
+                var items = document.getElementById('country-items');
+                checkList.getElementsByClassName('anchor')[0].onclick = function(evt) {
+                    if (items.classList.contains('visible')) {
+                        items.classList.remove('visible');
+                        items.style.display = "none";
+                    } else {
+                        items.classList.add('visible');
+                        items.style.display = "block";
+                    }
+                }
+                items.onblur = function(evt) {
+                    items.classList.remove('visible');
+                }
+                </script>
+            </div>
+            <div id="region-filter" style="height: 80%;">
+                <label for="region-tb">Region: </label>
+                <input type="text" style="height: 100%;" id="region-tb" name="region-tb"/>
+            </div>
+            <div id="city-filter" style="height: 80%;">
+                <label for="city-tb">City: </label>
+                <input type="text" style="height: 100%;" id="city-tb" name="city-tb"/>
+            </div>
+            <div id="speed-filter" style="height: 80%;">
+                <style>
+                #speed-slider {
+                    appearance: none;
+                    background: linear-gradient(
+                        to right,
+                        red,
+                        blue
+                    );
+                    width: 50%;
+                }
+                #speed-slider::-webkit-slider-thumb {
+                    -webkit-appearance: none; /* Override default look */
+                    appearance: none;
+                    width: 10px; /* Set a specific slider handle width */
+                    height: 25px; /* Slider handle height */
+                    background: #ffffff; /* Green background */
+                    cursor: pointer; /* Cursor on hover */
+                }
+                </style>
+                <p id="speed-display" style="float: left; margin-top: 2%;">Speed (5000ms): </p>
+                <input type="range" min="20" max="10000" value="5000" id="speed-slider" name="speed-slider" style="height: 100%;">
+                <script>
+                var sp = document.getElementById("speed-slider")
+                var spDisplay = document.getElementById("speed-display")
+                sp.oninput = function() {
+                    spDisplay.innerHTML = `Speed (${sp.value.toString().padStart(5, '0')}ms): `
+                }
+                </script>
+            </div>
+            <div id="anon-filter">
+                <div id="anon-list" class="dropdown-check-list" tabindex="100" style="background-color: #4f4f4e;">
+                    <span class="anchor">Anonymity</span>
+                    <ul id="anon-items" class="items">
+                        <li><input type="checkbox" />All Anonymities</li>
+                        <li><input type="checkbox" />Unknown</li>
+                        <li><input type="checkbox" />None</li>
+                        <li><input type="checkbox" />Low</li>
+                        <li><input type="checkbox" />Medium</li>
+                        <li><input type="checkbox" />High</li>
+                    </ul>
+                </div>
+                <script>
+                var checkList1 = document.getElementById('anon-list');
+                var items1 = document.getElementById('anon-items');
+                checkList1.getElementsByClassName('anchor')[0].onclick = function(evt) {
+                    if (items1.classList.contains('visible')) {
+                        items1.classList.remove('visible');
+                        items1.style.display = "none";
+                    } else {
+                        items1.classList.add('visible');
+                        items1.style.display = "block";
+                    }
+                }
+                items1.onblur = function(evt) {
+                    items1.classList.remove('visible');
+                }
+                </script>
+            </div>
+            <div id="protoc-filter">
+                <div id="protoc-list" class="dropdown-check-list" tabindex="100" style="background-color: #4f4f4e;">
+                    <span class="anchor">Protocol</span>
+                    <ul id="protoc-items" class="items">
+                        <li><input type="checkbox" />All Protocols</li>
+                        <li><input type="checkbox" />Unknown</li>
+                        <li><input type="checkbox" />HTTP</li>
+                        <li><input type="checkbox" />HTTPS</li>
+                        <li><input type="checkbox" />SOCKS4</li>
+                        <li><input type="checkbox" />SOCKS5</li>
+                    </ul>
+                </div>
+                <script>
+                var checkList2 = document.getElementById('protoc-list');
+                var items2 = document.getElementById('protoc-items');
+                checkList2.getElementsByClassName('anchor')[0].onclick = function(evt) {
+                    if (items2.classList.contains('visible')) {
+                        items2.classList.remove('visible');
+                        items2.style.display = "none";
+                    } else {
+                        items2.classList.add('visible');
+                        items2.style.display = "block";
+                    }
+                }
+                items2.onblur = function(evt) {
+                    items2.classList.remove('visible');
+                }
+                </script>
+            </div>
+            <div id="lc-filter">
+                <style>
+                #lc-slider {
+                    appearance: none;
+                    background: linear-gradient(
+                        to right,
+                        red,
+                        blue
+                    );
+                    width: 40%;
+                }
+                #lc-slider::-webkit-slider-thumb {
+                    -webkit-appearance: none; /* Override default look */
+                    appearance: none;
+                    width: 10px; /* Set a specific slider handle width */
+                    height: 25px; /* Slider handle height */
+                    background: #ffffff; /* Green background */
+                    cursor: pointer; /* Cursor on hover */
+                }
+                </style>
+                <p id="lc-display" style="float: left; margin-top: 2%;">Checked since (12h 0m): </p>
+                <input type="range" min="1" max="1440" value="720" id="lc-slider" name="lc-slider" style="height: 100%;">
+                <script>
+                var lc = document.getElementById("lc-slider")
+                var lcDisplay = document.getElementById("lc-display")
+                lc.oninput = function() {
+                    var hrs = Math.floor(lc.value/60).toString().padStart(2, '0')
+                    var mins = (lc.value%60).toString().padStart(2, '0')
+                    lcDisplay.innerHTML = `Checked since (${hrs}h ${mins}m): `
+                }
+                </script>
+            </div>
+        </div>
+        
+        <div id="map"></div>
+        <script>
+        var map = L.map('map').setView([33.8182512,-84.3828412], 13);
+        L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 19,
+            attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+        }).addTo(map);
+        </script>
+        <div id="bottom-bar"></div>
     </body>
 </html>

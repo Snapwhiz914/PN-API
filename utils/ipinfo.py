@@ -2,6 +2,7 @@ import requests
 from bs4 import BeautifulSoup
 import pycountry
 from collections import Counter
+from geopy.geocoders import Nominatim
 
 class IpInfo:
     SOURCES = [
@@ -16,6 +17,7 @@ class IpInfo:
     ]
 
     def __init__(self):
+        self.geolocator = Nominatim()
         pass
 
     def _country_box_to_str(self, text):
@@ -32,13 +34,14 @@ class IpInfo:
         cities = []
         regions = []
         countries = []
+        lats = []
+        lons = []
         for src in self.SOURCES:
             res = requests.post("https://www.iplocation.net/get-ipdata", data={
                 "ip": ip,
                 "source": src,
                 "ipv": 4
             }).json()
-            #print(res)
             if res.get("res", None) == None: continue
             countries.append(
                 res["res"].get("countryCode", None) or
@@ -60,10 +63,20 @@ class IpInfo:
                 res["res"].get("city", None) or
                 (res["res"]["location"]["city"] if res["res"].get("location", None) != None else None)
             )
+            lats.append(
+                float(res["res"].get("latitude")) or 
+                float(res["res"].get("latitude")) or 
+            )
+        country = Counter(countries).most_common(1)[0][0]
+        region = Counter(regions).most_common(1)[0][0]
+        city = Counter(cities).most_common(1)[0][0]
+        res = geolocator.geocode((city + " " + region + " " + country).strip())
         return {
-            "country": Counter(countries).most_common(1)[0][0],
-            "region": Counter(regions).most_common(1)[0][0],
-            "city": Counter(cities).most_common(1)[0][0]
+            "country": country,
+            "region": region,
+            "city": city,
+            "lat": res.latitude,
+            "lon": res.longitude
         }
 
 if __name__ == '__main__':
