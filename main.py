@@ -91,10 +91,10 @@ def bkgd_scan():
 def bkgd_check_driver():
     global current_proxies, scan_q
     while True:
+        time.sleep(15*60) #Every 15 minutes
         for proxy in current_proxies:
             if int((datetime.datetime.now()-proxy["lc"]).seconds/60) >= 30:
                 scan_q.put(proxy)
-        time.sleep(15*60) #Every 15 minutes
 
 def bkgd_check():
     global current_proxies, scan_q
@@ -109,7 +109,7 @@ def bkgd_check():
             if proxy in current_proxies: current_proxies.remove(proxy)
             print("CHECKER: " + to_check["ip"] + " has FAILED")
 
-def bkgd_save():
+def bkgd_save(): 
     while True:
         json.dump(current_proxies, open("save.json", "w+"), default=str)
         time.sleep(5*60)
@@ -154,15 +154,16 @@ def return_pac(
     anon: int = None,
     protocs: Union[List[int], None] = Query(default=None),
     last_check: int = None,
-    limit: int = 20):
+    limit: int = 20,
+    lb: bool = False):
     proxies = return_proxy(country, city, speed, anon, protocs, last_check, limit)
     if len(proxies) == 0:
         response.status_code = status.HTTP_204_NO_CONTENT
         return ""
-    p_string = ""
+    addr_arr = []
     for p in proxies:
-        p_string = p_string + ("PROXY" if p["protocs"][0]<=1 else "SOCKS") + " " + p["ip"] + ":" + str(p["port"]) + "; "
-    return Response(content=pac_template.substitute({"p_addr": p_string}),
+        addr_arr.append(("PROXY" if p["protocs"][0]<=1 else "SOCKS") + " " + p["ip"] + ":" + str(p["port"]) + ";")
+    return Response(content=pac_template.substitute({"p_addr": str(addr_arr), "lb": str(lb).lower()}),
         media_type="application/x-ns-proxy-autoconfig")
 
 @app.post("/constraints/")

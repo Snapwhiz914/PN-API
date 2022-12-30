@@ -1,5 +1,8 @@
 function FindProxyForURL(url, host) {
-    if (isPlainHostName(host) || dnsDomainIs(host, ".local")) return "DIRECT;"
+    var PROXIES = [$p_arr]
+    var LOAD_BALENCE = $lb
+
+    if (isPlainHostName(host) || dnsDomainIs(host, ".local") || host == "localhost") return "DIRECT;"
 
     /* Don't proxy Windows Update */
     if ((host == "download.microsoft.com") ||
@@ -15,19 +18,30 @@ function FindProxyForURL(url, host) {
     }
 
     /* Don't proxy local ip addresses */
-    if (isInNet(hostIP, '0.0.0.0', '255.0.0.0') ||
-        isInNet(hostIP, '10.0.0.0', '255.0.0.0') ||
-        isInNet(hostIP, '127.0.0.0', '255.0.0.0') ||
-        isInNet(hostIP, '169.254.0.0', '255.255.0.0') ||
-        isInNet(hostIP, '172.16.0.0', '255.240.0.0') ||
-        isInNet(hostIP, '192.0.2.0', '255.255.255.0') ||
-        isInNet(hostIP, '192.88.99.0', '255.255.255.0') ||
-        isInNet(hostIP, '192.168.0.0', '255.255.0.0') ||
-        isInNet(hostIP, '198.18.0.0', '255.254.0.0') ||
-        isInNet(hostIP, '224.0.0.0', '240.0.0.0') ||
-        isInNet(hostIP, '240.0.0.0', '240.0.0.0')) {
-        return 'DIRECT';
+    if (isResolvable(host)) {
+        var hostIP = dnsResolve(host);
+        if (isInNet(hostIP, '0.0.0.0', '255.0.0.0') ||
+            isInNet(hostIP, '10.0.0.0', '255.0.0.0') ||
+            isInNet(hostIP, '127.0.0.0', '255.0.0.0') ||
+            isInNet(hostIP, '169.254.0.0', '255.255.0.0') ||
+            isInNet(hostIP, '172.16.0.0', '255.240.0.0') ||
+            isInNet(hostIP, '192.0.2.0', '255.255.255.0') ||
+            isInNet(hostIP, '192.88.99.0', '255.255.255.0') ||
+            isInNet(hostIP, '192.168.0.0', '255.255.0.0') ||
+            isInNet(hostIP, '198.18.0.0', '255.254.0.0') ||
+            isInNet(hostIP, '224.0.0.0', '240.0.0.0') ||
+            isInNet(hostIP, '240.0.0.0', '240.0.0.0')) {
+            return 'DIRECT';
+        }
     }
-
-    return "$p_addr DIRECT";
+    
+    if (LOAD_BALENCE) {
+        var proxy = PROXIES[Math.floor((Math.random() * hostsArray.length))];
+        return `${proxy} DIRECT`;
+    }
+    var pString = "";
+    for (prox in PROXIES) {
+        pString = pString + prox + " ";
+    }
+    return pString + "DIRECT";
 }
