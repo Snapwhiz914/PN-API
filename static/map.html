@@ -18,7 +18,6 @@
             }
             #filters div {
                 float: left;
-                margin-left: 1%
             }
             #map {
                 position: absolute;
@@ -35,6 +34,10 @@
                 height: 5vh;
                 bottom: 0vh;
                 width: 100vw;
+            }
+            #bottom-bar div {
+                margin: 0%;
+                float: left;
             }
         </style>
     </head>
@@ -76,11 +79,7 @@
                 <style>
                 #speed-slider {
                     appearance: none;
-                    background: linear-gradient(
-                        to right,
-                        red,
-                        blue
-                    );
+                    background: linear-gradient(90deg, rgba(255,0,0,1) 0%, rgba(156,43,192,1) 12%, rgba(203,132,39,1) 24%, rgba(255,211,32,1) 36%, rgba(202,196,40,1) 48%, rgba(42,173,39,1) 60%, rgba(42,129,203,1) 72%, rgba(123,123,123,1) 86%, rgba(61,61,61,1) 100%);
                     width: 50%;
                 }
                 #speed-slider::-webkit-slider-thumb {
@@ -202,6 +201,21 @@
             attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
         }).addTo(map);
         </script>
-        <div id="bottom-bar"></div>
+        <div id="bottom-bar">
+            <div id="stats-container" style="margin-left: 5%;">
+                <p id="stats">Currently shown proxies: </p>
+            </div>
+        </div>
+        <script type="text/javascript" src="./map.js"></script>
+        <script>
+        sp.onchange = function() {
+            currentFilters.speed = parseInt(sp.value)
+            updateMap()
+        }
+        lc.onchange = function() {
+            currentFilters.lc = parseInt(lc.value)
+            updateMap()
+        }
+        </script>
     </body>
 </html>

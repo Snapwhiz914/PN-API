@@ -24,6 +24,7 @@ from ds import PROXY_PROTOC, ANONYMITY
 from sources.hidemy import HideMyNameNet
 from fastapi import FastAPI, Query, Response, status
 from fastapi.responses import PlainTextResponse
+from fastapi.staticfiles import StaticFiles
 from typing import Union, List
 import threading
 import time
@@ -61,8 +62,10 @@ for proxy in current_proxies:
 
 def save():
     json.dump(current_proxies, open("save.json", "w+"), default=str)
+    ipinfo.write_out_cache()
     print("saved proxies")
 app = FastAPI(on_shutdown=[save])
+app.mount("/app", StaticFiles(directory="static"), name="static")
 
 def protoc_num_to_prefix(num):
     p_type = list(PROXY_PROTOC.keys())[list(PROXY_PROTOC.values()).index(num)]
@@ -106,12 +109,13 @@ def bkgd_check():
             current_proxies.append(res)
             print("CHECKER: " + to_check["ip"] + " has PASSED")
         else:
-            if proxy in current_proxies: current_proxies.remove(proxy)
+            if to_check in current_proxies: current_proxies.remove(to_check)
             print("CHECKER: " + to_check["ip"] + " has FAILED")
 
 def bkgd_save(): 
     while True:
         json.dump(current_proxies, open("save.json", "w+"), default=str)
+        ipinfo.write_out_cache()
         time.sleep(5*60)
 
 @app.get("/proxy/")
@@ -137,6 +141,7 @@ def return_proxy(country: str = None,
                 else:
                     print(" :FALSE")
         if last_check != None and (datetime.datetime.now() - p["lc"]).minutes > last_check: continue
+        p["lc"] = (datetime.datetime.now() - p["lc"]).seconds/60 
         collected_proxies.append(p)
     if len(collected_proxies) > limit:
         collected_proxies.sort(key= lambda x: x["speed"], reverse=True)

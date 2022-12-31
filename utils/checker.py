@@ -4,7 +4,7 @@ import bs4
 import requests
 import sys
 import re
-sys.path.append('../PNRV2')
+sys.path.append('../PN-API')
 from ds import PROXY_PROTOC, ANONYMITY
 
 class Checker:

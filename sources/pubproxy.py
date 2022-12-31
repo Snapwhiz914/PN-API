@@ -1,7 +1,7 @@
 import requests
 import sys
 import datetime
-sys.path.append('../PNRV2')
+sys.path.append('../PN-API')
 from ds import PROXY_PROTOC, ANONYMITY
 
 class PubProxy:
