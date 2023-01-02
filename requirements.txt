@@ -1,5 +1,6 @@
 beautifulsoup4==4.11.1
 fastapi==0.88.0
+geopy==2.2.0
 pycountry==22.3.5
 requests==2.27.1
 uvicorn==0.20.0
