@@ -1,5 +1,5 @@
 function FindProxyForURL(url, host) {
-    var PROXIES = [$p_arr]
+    var PROXIES = $p_arr
     var LOAD_BALENCE = $lb
 
     if (isPlainHostName(host) || dnsDomainIs(host, ".local") || host == "localhost") return "DIRECT;"
@@ -37,7 +37,7 @@ function FindProxyForURL(url, host) {
     
     if (LOAD_BALENCE) {
         var proxy = PROXIES[Math.floor((Math.random() * hostsArray.length))];
-        return `${proxy} DIRECT`;
+        return proxy + " DIRECT";
     }
     var pString = "";
     for (prox in PROXIES) {

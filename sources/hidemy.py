@@ -89,7 +89,7 @@ class HideMyNameNet:
             return bs4.BeautifulSoup(requests.get(self._gen_url(constraints, start=start), headers={
                 "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Safari/537.36",
                 "sec-ch-ua": '"Not?A_Brand";v="8", "Chromium";v="108", "Google Chrome";v="108"'
-            }, verify=False).text, "html.parser")
+            }, verify=False, timeout=5).text, "html.parser")
         else:
             self.cloudflare_flagged = False
             proxy_addr = self._get_best_usable_proxy()
@@ -99,7 +99,7 @@ class HideMyNameNet:
                 "sec-ch-ua": '"Not?A_Brand";v="8", "Chromium";v="108", "Google Chrome";v="108"'
             }, proxies={
                 "https": proxy_addr
-            }, verify=False).text, "html.parser")
+            }, verify=False, timeout=10).text, "html.parser")
 
     def gather(self, constraints: dict, ignore_time: int = 15):
         '''
@@ -118,8 +118,8 @@ class HideMyNameNet:
                 try:
                     current_trs = current_tbody.find_all("tr")
                 except AttributeError as e:
-                    if attempts == 10:
-                        print("HM: 10 attempts reached, returning empty")
+                    if attempts == 25:
+                        print("HM: 25 attempts reached, returning empty")
                         return []
                     #generally means cloudflare flagged us, so use a proxy
                     print("HM: Cloudflare flagged detected")

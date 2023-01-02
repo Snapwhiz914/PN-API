@@ -39,7 +39,7 @@ from string import Template
 
 idle_scan_constraints = {
     "anon": [ANONYMITY["high"], ANONYMITY["med"]],
-    "speed": 2000
+    "speed": 10000
 }
 
 current_proxies = json.load(open("save.json"))
@@ -64,6 +64,7 @@ def save():
     json.dump(current_proxies, open("save.json", "w+"), default=str)
     ipinfo.write_out_cache()
     print("saved proxies")
+
 app = FastAPI(on_shutdown=[save])
 app.mount("/app", StaticFiles(directory="static"), name="static")
 
@@ -99,6 +100,20 @@ def bkgd_check_driver():
             if int((datetime.datetime.now()-proxy["lc"]).seconds/60) >= 30:
                 scan_q.put(proxy)
 
+def proxy_in_proxy_list(proxy):
+    for prox in current_proxies:
+        if proxy["ip"] == prox["ip"]: return True
+    return False
+
+def remove_proxy_from_list(proxy):
+    for prox in current_proxies:
+        if proxy["ip"] == prox["ip"]: current_proxies.remove(prox)
+
+def get_index_of_proxy(proxy):
+    for i in range(len(current_proxies)):
+        if current_proxies[i]["ip"] == proxy["ip"]: return i
+    return -1
+
 def bkgd_check():
     global current_proxies, scan_q
     while True:
@@ -106,10 +121,13 @@ def bkgd_check():
         print("CHECKER: Checking " + to_check["ip"] + "...")
         res = checker.check(to_check)
         if res != False:
-            current_proxies.append(res)
+            if proxy_in_proxy_list(res):
+                current_proxies[get_index_of_proxy(res)] = res
+            else:
+                current_proxies.append(res)
             print("CHECKER: " + to_check["ip"] + " has PASSED")
         else:
-            if to_check in current_proxies: current_proxies.remove(to_check)
+            if proxy_in_proxy_list(to_check): remove_proxy_from_list(to_check)
             print("CHECKER: " + to_check["ip"] + " has FAILED")
 
 def bkgd_save(): 
@@ -119,7 +137,7 @@ def bkgd_save():
         time.sleep(5*60)
 
 @app.get("/proxy/")
-def return_proxy(country: str = None,
+def return_proxy(countries: Union[List[str], None] = Query(default=None),
     city: str = None,
     speed: int = None,
     anon: int = None,
@@ -128,20 +146,22 @@ def return_proxy(country: str = None,
     limit: int = 20):
     collected_proxies = []
     for p in current_proxies:
-        if country != None and p["country"] != country: continue
+        if countries != None:
+            approved = True
+            for country in countries:
+                if p["country"] not in countries:
+                    approved = False
+            if not approved: continue
         if city != None and p["city"] != city: continue
         if speed != None and p["speed"] > speed: continue
         if anon != None and p["anon"] != anon: continue
         if protocs != None:
+            approved = False
             for protoc in protocs:
-                print(str(protoc) + " is not in " + str(p["protocs"]), end="")
-                if protoc not in p["protocs"]:
-                    print(" :TRUE")
-                    continue
-                else:
-                    print(" :FALSE")
+                if protoc in p["protocs"]:
+                    approved = True
+            if not approved: continue
         if last_check != None and (datetime.datetime.now() - p["lc"]).minutes > last_check: continue
-        p["lc"] = (datetime.datetime.now() - p["lc"]).seconds/60 
         collected_proxies.append(p)
     if len(collected_proxies) > limit:
         collected_proxies.sort(key= lambda x: x["speed"], reverse=True)
@@ -153,7 +173,7 @@ def return_proxy(country: str = None,
 @app.get("/pac/")
 def return_pac(
     response: Response,
-    country: str = None,
+    country: Union[List[str], None] = Query(default=None),
     city: str = None,
     speed: int = None,
     anon: int = None,
@@ -168,7 +188,7 @@ def return_pac(
     addr_arr = []
     for p in proxies:
         addr_arr.append(("PROXY" if p["protocs"][0]<=1 else "SOCKS") + " " + p["ip"] + ":" + str(p["port"]) + ";")
-    return Response(content=pac_template.substitute({"p_addr": str(addr_arr), "lb": str(lb).lower()}),
+    return Response(content=pac_template.substitute({"p_arr": str(addr_arr), "lb": str(lb).lower()}),
         media_type="application/x-ns-proxy-autoconfig")
 
 @app.post("/constraints/")

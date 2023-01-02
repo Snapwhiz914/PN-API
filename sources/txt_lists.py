@@ -30,7 +30,6 @@ class TxtLists:
         proxies = []
         for protoc_num in protocs_to_scan:
             url = self._gen_url(protoc_num)
-            print(url)
             result = requests.get(url)
             for addr in result.text.splitlines():
                 proxies.append({

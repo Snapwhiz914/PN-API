@@ -4,8 +4,10 @@
         <title>PN</title>
         <link rel="stylesheet" href="./checkbox-dropdown.css"/>
         <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css" integrity="sha256-kLaT2GOSpHechhsozzB+flnD+zUyjE2LlfWPgU04xyI=" crossorigin=""/>
+        <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.css"></script>
         <script type="text/javascript" src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js" integrity="sha256-WBkoXOwTeyKclOHuWtc+i2uENFpDZ9YPdf5Hf+D7ewM=" crossorigin=""></script>
         <script type="text/javascript" src="https://raw.githubusercontent.com/w8r/leaflet-area-select/master/src/Map.SelectArea.js"></script>
+        <script type="text/javascript" src="https://unpkg.com/leaflet.markercluster@1.4.1/dist/leaflet.markercluster.js"></script>
         <style>
             body {
                 margin: 0px;
@@ -18,13 +20,23 @@
             }
             #filters div {
                 float: left;
+                margin-left: 1%;
             }
             #map {
                 position: absolute;
                 height: 91vh;
-                width: 85vw;
+                width: 100vw;
                 bottom: 5vh;
                 right: 0vw;
+            }
+            .rounded-cluster-icon {
+                border-radius: 6px;
+                background-color: darkgrey;
+                padding-bottom: 6px;
+                padding-left: 6px;
+            }
+            .rci-transparent {
+                opacity: 20%;
             }
             #bottom-bar {
                 position: absolute;
@@ -38,7 +50,7 @@
             #bottom-bar div {
                 margin: 0%;
                 float: left;
-            }
+            }        
         </style>
     </head>
     <body>
@@ -46,8 +58,8 @@
             <div id="country-filter" style="margin-left: 3%;">
                 <div id="country-list" class="dropdown-check-list" tabindex="100" style="background-color: #4f4f4e;">
                     <span class="anchor">Country</span>
-                    <ul id="country-items" class="items">
-                        <li><input type="checkbox" />All Countries</li>
+                    <ul id="country-items" class="items" style="overflow-y: auto; height: 150px;">
+                        <li><input type="checkbox" id="countries-all"/>All Countries</li>
                     </ul>
                 </div>
                 <script>
@@ -134,12 +146,12 @@
                 <div id="protoc-list" class="dropdown-check-list" tabindex="100" style="background-color: #4f4f4e;">
                     <span class="anchor">Protocol</span>
                     <ul id="protoc-items" class="items">
-                        <li><input type="checkbox" />All Protocols</li>
-                        <li><input type="checkbox" />Unknown</li>
-                        <li><input type="checkbox" />HTTP</li>
-                        <li><input type="checkbox" />HTTPS</li>
-                        <li><input type="checkbox" />SOCKS4</li>
-                        <li><input type="checkbox" />SOCKS5</li>
+                        <li><input type="checkbox" id="protocs-all"/>All Protocols</li>
+                        <li><input type="checkbox" id="protocs-unk"/>Unknown</li>
+                        <li><input type="checkbox" id="protocs-h"/>HTTP</li>
+                        <li><input type="checkbox" id="protocs-hs"/>HTTPS</li>
+                        <li><input type="checkbox" id="protocs-s4"/>SOCKS4</li>
+                        <li><input type="checkbox" id="protocs-s5"/>SOCKS5</li>
                     </ul>
                 </div>
                 <script>
@@ -192,7 +204,9 @@
                 </script>
             </div>
         </div>
-        
+        <div id="left-sidebar">
+            
+        </div>
         <div id="map"></div>
         <script>
         var map = L.map('map').setView([33.8182512,-84.3828412], 13);
@@ -202,10 +216,22 @@
         }).addTo(map);
         </script>
         <div id="bottom-bar">
-            <div id="stats-container" style="margin-left: 5%;">
+            <div id="stats-container" style="margin-left: 5%; margin-top: -0.5%;">
                 <p id="stats">Currently shown proxies: </p>
             </div>
+            <div id="status-container" style="margin-left: 5%; margin-top: -0.5%">
+                <p id="fetch-status">Fetching Proxies...</p>
+            </div>
+            <div id="refresh-container" style="margin-left: 5%; margin-top: 0.5%">
+                <label for="refresh-cb">Pause Refresh: </label>
+                <input type="checkbox" id="refresh-cb" />
+            </div>
+            <div id="pac-container" style="margin-left: 5%; margin-top: 0.5%">
+                <label for="pac-url-tb"><button id="pac-button">Generate PAC: </button></label>
+                <input type="text" style="width: 500px" onfocus="this.select();" onmouseup="return false;" value="" id="pac-url-tb"/>
+            </div>
         </div>
+        <script type="text/javascript" src="./icons.js"></script>
         <script type="text/javascript" src="./map.js"></script>
         <script>
         sp.onchange = function() {
@@ -215,6 +241,79 @@
         lc.onchange = function() {
             currentFilters.lc = parseInt(lc.value)
             updateMap()
+        }
+        
+        protocsAll = document.getElementById("protocs-all")
+        protocsUnk = document.getElementById("protocs-unk")
+        protocsHttp = document.getElementById("protocs-h")
+        protocsHttps = document.getElementById("protocs-hs")
+        protocsSocks4 = document.getElementById("protocs-s4")
+        protocsSocks5 = document.getElementById("protocs-s5")
+        
+        protocsAll.onchange = function() {
+            if (protocsAll.checked) {
+                currentFilters.protocs = []
+                protocsUnk.checked = false
+                protocsHttp.checked = false
+                protocsHttps.checked = false
+                protocsSocks4.checked = false
+                protocsSocks5.checked = false
+                updateMap()
+            } else {
+                if (!(protocsUnk.checked || protocsHttp.checked || protocsHttps.checked || protocsSocks4.checked || protocsSocks5.checked)) protocsAll.checked = true
+            }
+        }
+        function unCheckAll() {
+            if (protocsUnk.checked || protocsHttp.checked || protocsHttps.checked || protocsSocks4.checked || protocsSocks5.checked) {
+                protocsAll.checked = false
+                
+                if (!protocsUnk.checked && currentFilters.protocs.indexOf(-1) != -1) currentFilters.protocs.splice(currentFilters.protocs.indexOf(-1), 1)
+                if (protocsUnk.checked && currentFilters.protocs.indexOf(-1) == -1) currentFilters.protocs.push(-1)
+                
+                if (!protocsHttp.checked && currentFilters.protocs.indexOf(0) != -1) currentFilters.protocs.splice(currentFilters.protocs.indexOf(0), 1)
+                if (protocsHttp.checked && currentFilters.protocs.indexOf(0) == -1) currentFilters.protocs.push(0)
+                
+                if (!protocsHttps.checked && currentFilters.protocs.indexOf(1) != -1) currentFilters.protocs.splice(currentFilters.protocs.indexOf(1), 1)
+                if (protocsHttps.checked && currentFilters.protocs.indexOf(1) == -1) currentFilters.protocs.push(1)
+                
+                if (!protocsSocks4.checked && currentFilters.protocs.indexOf(2) != -1) currentFilters.protocs.splice(currentFilters.protocs.indexOf(2), 1)
+                if (protocsSocks4.checked && currentFilters.protocs.indexOf(2) == -1) currentFilters.protocs.push(2)
+                
+                if (!protocsSocks5.checked && currentFilters.protocs.indexOf(3) != -1) currentFilters.protocs.splice(currentFilters.protocs.indexOf(3), 1)
+                if (protocsSocks5.checked && currentFilters.protocs.indexOf(3) == -1) currentFilters.protocs.push(3)
+                updateMap()
+            } else {
+                protocsAll.checked = true
+            }
+        }
+        protocsUnk.onchange = unCheckAll
+        protocsHttp.onchange = unCheckAll
+        protocsHttps.onchange = unCheckAll
+        protocsSocks4.onchange = unCheckAll
+        protocsSocks5.onchange = unCheckAll    
+        protocsAll.checked = true
+        
+        countriesAll = document.getElementById("countries-all")
+        countriesAll.onchange = function() {
+            var listedCountries = countryDropdownContainer.getElementsByClassName("country-li")
+            if (protocsAll.checked) {
+                for (var e of listedCountries) {
+                    e.children[0].checked = false
+                }
+                currentFilters.countries = []
+                updateMap()
+            } else {
+                for (var e of listedCountries) {
+                    if (e.children[0].checked) return
+                }
+                countriesAll.checked = true
+            }
+        }
+        countriesAll.checked = true
+        
+        var putb = document.getElementById("pac-url-tb")
+        document.getElementById("pac-button").onclick = function() {
+            putb.value = generateProxyURLFromShown()
         }
         </script>
     </body>
