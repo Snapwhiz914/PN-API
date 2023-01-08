@@ -1,7 +1,7 @@
-proxies = []
-markers = []
-clusters = new Map()
-currentFilters = {
+var proxies = []
+var markers = []
+var clusters = new Map()
+var currentFilters = {
   countries: [],
   city: "",
   region: "",
@@ -11,7 +11,7 @@ currentFilters = {
   lc: 720
 }
 
-protocsCode = {
+var protocsCode = {
   [-1]: "UNKNOWN",
   0: "HTTP",
   1: "HTTPS",
@@ -19,7 +19,7 @@ protocsCode = {
   3: "SOCKS5"
 }
 
-anonCode = {
+var anonCode = {
   [-1]: "UNKNOWN",
   0: "None",
   1: "Low",
@@ -110,6 +110,7 @@ function updateMarkers() {
       if (m.options.title == prox.ip) {
         alreadyHasMarker = true
         m._popup._content = generatePopupString(prox)
+      }
     }
     if (alreadyHasMarker) continue
     var icon = undefined
@@ -203,7 +204,7 @@ function updateMap() {
     if (currentFilters.city != "" && prox.city.indexOf(currentFilters.city) == -1) shouldShow = false
     if (currentFilters.region != "" && prox.region.indexOf(currentFilters.region) == -1) shouldShow = false
     if (currentFilters.protocs.length != 0 && !(prox.protocs.some(e => currentFilters.protocs.includes(e)))) shouldShow = false
-    if (currentFilters.anons.length != 0 && !(prox.anon in currentFilters.anons)) shouldShow = false
+    if (currentFilters.anons.length != 0 && !(currentFilters.anons.some(e => prox.anon == e))) shouldShow = false
     if (currentFilters.lc <= prox.lc) shouldShow = false
     if (prox.speed >= currentFilters.speed) shouldShow = false
     var markerForP = undefined
@@ -292,7 +293,14 @@ function generateProxyURLFromShown() {
     })
   }
   
-  return location.origin + `/pac/?speed=${currentFilters.speed}&lc=${currentFilters.lc}&limit=${shownMarkers}&${countriesString}${protocsString}`
+  var anonsString = ""
+  if (currentFilters.anons.length > 0) {
+    currentFilters.anons.forEach((a) => {
+      anonsString = anonsString.concat("anons=" + a + "&")
+    })
+  }
+  
+  return location.origin + `/pac/?speed=${currentFilters.speed}&lc=${currentFilters.lc}&limit=${shownMarkers}&${countriesString}${protocsString}${anonsString}`
 }
 
 window.onload = function() {

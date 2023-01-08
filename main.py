@@ -140,7 +140,7 @@ def bkgd_save():
 def return_proxy(countries: Union[List[str], None] = Query(default=None),
     city: str = None,
     speed: int = None,
-    anon: int = None,
+    anons: Union[List[int], None] = Query(default=None),
     protocs: Union[List[int], None] = Query(default=None),
     last_check: int = None,
     limit: int = 20):
@@ -154,7 +154,12 @@ def return_proxy(countries: Union[List[str], None] = Query(default=None),
             if not approved: continue
         if city != None and p["city"] != city: continue
         if speed != None and p["speed"] > speed: continue
-        if anon != None and p["anon"] != anon: continue
+        if anons != None:
+            approved = True
+            for anon in anons:
+                if p["anon"] not in anons:
+                    approved = False
+            if not approved: continue
         if protocs != None:
             approved = False
             for protoc in protocs:
@@ -176,12 +181,12 @@ def return_pac(
     country: Union[List[str], None] = Query(default=None),
     city: str = None,
     speed: int = None,
-    anon: int = None,
+    anons: Union[List[int], None] = Query(default=None),
     protocs: Union[List[int], None] = Query(default=None),
     last_check: int = None,
     limit: int = 20,
     lb: bool = False):
-    proxies = return_proxy(country, city, speed, anon, protocs, last_check, limit)
+    proxies = return_proxy(country, city, speed, anons, protocs, last_check, limit)
     if len(proxies) == 0:
         response.status_code = status.HTTP_204_NO_CONTENT
         return ""
