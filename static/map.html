@@ -117,12 +117,12 @@
                 <div id="anon-list" class="dropdown-check-list" tabindex="100" style="background-color: #4f4f4e;">
                     <span class="anchor">Anonymity</span>
                     <ul id="anon-items" class="items">
-                        <li><input type="checkbox" />All Anonymities</li>
-                        <li><input type="checkbox" />Unknown</li>
-                        <li><input type="checkbox" />None</li>
-                        <li><input type="checkbox" />Low</li>
-                        <li><input type="checkbox" />Medium</li>
-                        <li><input type="checkbox" />High</li>
+                        <li><input type="checkbox" id="anons-all"/>All Anonymities</li>
+                        <li><input type="checkbox" id="anons-unk" />Unknown</li>
+                        <li><input type="checkbox" id="anons-none" />None</li>
+                        <li><input type="checkbox" id="anons-low" />Low</li>
+                        <li><input type="checkbox" id="anons-med" />Medium</li>
+                        <li><input type="checkbox" id="anons-high" />High</li>
                     </ul>
                 </div>
                 <script>
@@ -292,6 +292,56 @@
         protocsSocks4.onchange = unCheckAll
         protocsSocks5.onchange = unCheckAll    
         protocsAll.checked = true
+        
+        anonsAll = document.getElementById("anons-all")
+        anonsUnk = document.getElementById("anons-unk")
+        anonsNone = document.getElementById("anons-none")
+        anonsLow = document.getElementById("anons-low")
+        anonsMed = document.getElementById("anons-med")
+        anonsHigh = document.getElementById("anons-high")
+        
+        anonsAll.onchange = function() {
+            if (anonsAll.checked) {
+                currentFilters.anons = []
+                anonsUnk.checked = false
+                anonsNone.checked = false
+                anonsLow.checked = false
+                anonsMed.checked = false
+                anonsHigh.checked = false
+                updateMap()
+            } else {
+                if (!(anonsUnk.checked || anonsNone.checked || anonsLow.checked || anonsMed.checked || anonsHigh.checked)) anonsAll.checked = true
+            }
+        }
+        function unCheckAll() {
+            if (anonsUnk.checked || anonsNone.checked || anonsLow.checked || anonsMed.checked || anonsHigh.checked) {
+                anonsAll.checked = false
+                
+                if (!anonsUnk.checked && currentFilters.anons.indexOf(-1) != -1) currentFilters.anons.splice(currentFilters.anons.indexOf(-1), 1)
+                if (anonsUnk.checked && currentFilters.anons.indexOf(-1) == -1) currentFilters.anons.push(-1)
+                
+                if (!anonsNone.checked && currentFilters.anons.indexOf(0) != -1) currentFilters.anons.splice(currentFilters.anons.indexOf(0), 1)
+                if (anonsNone.checked && currentFilters.anons.indexOf(0) == -1) currentFilters.anons.push(0)
+                
+                if (!anonsLow.checked && currentFilters.anons.indexOf(1) != -1) currentFilters.anons.splice(currentFilters.anons.indexOf(1), 1)
+                if (anonsLow.checked && currentFilters.anons.indexOf(1) == -1) currentFilters.anons.push(1)
+                
+                if (!anonsMed.checked && currentFilters.anons.indexOf(2) != -1) currentFilters.anons.splice(currentFilters.anons.indexOf(2), 1)
+                if (anonsMed.checked && currentFilters.anons.indexOf(2) == -1) currentFilters.anons.push(2)
+                
+                if (!anonsHigh.checked && currentFilters.anons.indexOf(3) != -1) currentFilters.anons.splice(currentFilters.anons.indexOf(3), 1)
+                if (anonsHigh.checked && currentFilters.anons.indexOf(3) == -1) currentFilters.anons.push(3)
+                updateMap()
+            } else {
+                anonsAll.checked = true
+            }
+        }
+        anonsUnk.onchange = unCheckAll
+        anonsNone.onchange = unCheckAll
+        anonsLow.onchange = unCheckAll
+        anonsMed.onchange = unCheckAll
+        anonsHigh.onchange = unCheckAll
+        anonsAll.checked = true
         
         countriesAll = document.getElementById("countries-all")
         countriesAll.onchange = function() {

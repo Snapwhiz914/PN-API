@@ -136,7 +136,7 @@ class HideMyNameNet:
                 "country": self._country_name_to_code(tds[2].find("span", {"class": "country"}).text),
                 "city": tds[2].find("span", {"class": "city"}).text,
                 "region": "",
-                "speed": int(tds[3].find("p").text.split(" ")[0]),
+                "speed": round(int(tds[3].find("p").text.split(" ")[0])*0.001),
                 "protocs": self._protocs_str_to_ds(tds[4].text),
                 "anon": self._anon_str_to_int(tds[5].text),
                 "lc": datetime.datetime.now() - datetime.timedelta(minutes=self._time_str_to_int_minutes(tds[6].text))

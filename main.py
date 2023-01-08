@@ -231,7 +231,7 @@ def get_constraints():
     return idle_scan_constraints
 
 threading.Thread(target=bkgd_scan).start()
-for i in range(3): #3 Background scan threads
+for i in range(10): #10 Background scan threads
     threading.Thread(target=bkgd_check).start()
 threading.Thread(target=bkgd_check_driver).start()
 threading.Thread(target=bkgd_save).start()

@@ -107,7 +107,9 @@ function updateMarkers() {
   for (var prox of proxies) {
     let alreadyHasMarker = false
     for (var m of markers) {
-      if (m.options.title == prox.ip) alreadyHasMarker = true
+      if (m.options.title == prox.ip) {
+        alreadyHasMarker = true
+        m._popup._content = generatePopupString(prox)
     }
     if (alreadyHasMarker) continue
     var icon = undefined
