@@ -40,7 +40,7 @@ function FindProxyForURL(url, host) {
         return proxy + " DIRECT";
     }
     var pString = "";
-    for (prox in PROXIES) {
+    for (var prox of PROXIES) {
         pString = pString + prox + " ";
     }
     return pString + "DIRECT";
