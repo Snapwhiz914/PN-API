@@ -74,10 +74,10 @@ def protoc_num_to_prefix(num):
 
 def bkgd_scan():
     global current_proxies, scan_q
-    seconds_since_start = 1440
+    minutes_since_start = 720
     while True:
         for s in sources:
-            if seconds_since_start%s.SCAN_INTERVAL == 0:
+            if minutes_since_start%s.SCAN_INTERVAL == 0:
                 print("MAIN: Scanning from source " + type(s).__name__ + "...")
                 s.update_usable_proxies(current_proxies)
                 res = []
@@ -90,7 +90,7 @@ def bkgd_scan():
                         if proxy["ip"] == prox["ip"]: continue
                     scan_q.put(prox)
         time.sleep(60)
-        seconds_since_start += 1
+        minutes_since_start += 1
 
 def bkgd_check_driver():
     global current_proxies, scan_q
@@ -118,7 +118,7 @@ def bkgd_check():
     global current_proxies, scan_q
     while True:
         to_check = scan_q.get(block=True)
-        print("CHECKER: Checking " + to_check["ip"] + "...")
+        print("CHECKER: Checking " + tl._proxy_type_to_abbr_str(to_check["protocs"][0]) + "://" + to_check["ip"] + "...")
         res = checker.check(to_check)
         if res != False:
             if proxy_in_proxy_list(res):

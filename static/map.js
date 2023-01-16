@@ -31,6 +31,7 @@ const statsP = document.getElementById("stats")
 const statusP = document.getElementById("fetch-status")
 const countryDropdownContainer = document.getElementById("country-items")
 const refreshCB = document.getElementById("refresh-cb")
+const statsPopup = document.getElementById("stats-text")
 var currentTimeUntilRefetch = 55
 var currentRFCountdownId = 0
 var shownMarkers = 0
@@ -230,6 +231,26 @@ function updateMap() {
 
 function updateStats() {
   statsP.innerHTML = "Current proxies: " + proxies.length.toString() + ", shown: " + shownMarkers.toString()
+  p = [0, 0, 0, 0, 0]
+  a = [0, 0, 0, 0, 0]
+  speedTotal = 0
+  for (var proxy of proxies) {
+    if (proxy.protocs[0] == -1) p[0] = p[0] + 1
+    if (proxy.protocs[0] == 0) p[1] = p[1] + 1
+    if (proxy.protocs[0] == 1) p[2] = p[2] + 1
+    if (proxy.protocs[0] == 2) p[3] = p[3] + 1
+    if (proxy.protocs[0] == 3) p[4] = p[4] + 1
+    
+    if (proxy.anon == -1) a[0] = a[0] + 1
+    if (proxy.anon == 0) a[1] = a[1] + 1
+    if (proxy.anon == 1) a[2] = a[2] + 1
+    if (proxy.anon == 2) a[3] = a[3] + 1
+    if (proxy.anon == 3) a[4] = a[4] + 1
+    speedTotal = speedTotal += proxy.speed
+  }
+  statsPopup.innerHTML = "Protocs: U " + p[0] + ", H " + p[1] + ", HS " + p[2] + ", S4 " + p[3] + ", S5 " + p[4] + "<br>"
+  + "Anons: U " + a[0] + ", N " + a[1] + ", L " + a[2] + ", M " + a[3] + ", H " + a[4] + "<br>"
+  + "Avg speed: " + Math.round(speedTotal/proxies.length) + "ms"
 }
 
 function cUncheckAll() {

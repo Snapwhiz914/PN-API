@@ -7,7 +7,7 @@ sys.path.append('../PN-API')
 from ds import PROXY_PROTOC, ANONYMITY
 
 class TxtLists:
-    SCAN_INTERVAL = 1440 #most lists update about daily
+    SCAN_INTERVAL = 720 #most lists update about half daily
 
     def __init__(self, usable_proxies: list):
         self.usable_proxies = usable_proxies
@@ -29,7 +29,7 @@ class TxtLists:
         protocs_to_scan = []
         if constraints.get('protocs', None) != None:
             protocs_to_scan = constraints["protocs"]
-        else: protocs_to_scan = [0, 2, 3]
+        else: protocs_to_scan = [3, 2, 0]
         proxies = []
         addrs = []
         for protoc_num in protocs_to_scan:

@@ -50,7 +50,15 @@
             #bottom-bar div {
                 margin: 0%;
                 float: left;
-            }        
+            }   
+            #stats-popup {
+                display: none;
+                position: fixed;
+                bottom: 5vh;
+                border: 3px solid #f1f1f1;
+                z-index: 1001;
+                background-color: grey;
+            }     
         </style>
     </head>
     <body>
@@ -216,20 +224,36 @@
         }).addTo(map);
         </script>
         <div id="bottom-bar">
-            <div id="stats-container" style="margin-left: 5%; margin-top: -0.5%;">
+            <div id="stats-container" style="margin-left: 2%; margin-top: -0.5%;">
                 <p id="stats">Currently shown proxies: </p>
             </div>
-            <div id="status-container" style="margin-left: 5%; margin-top: -0.5%">
+            <div id="status-container" style="margin-left: 2%; margin-top: -0.5%">
                 <p id="fetch-status">Fetching Proxies...</p>
             </div>
-            <div id="refresh-container" style="margin-left: 5%; margin-top: 0.5%">
+            <div id="refresh-container" style="margin-left: 2%; margin-top: 0.5%">
                 <label for="refresh-cb">Pause Refresh: </label>
                 <input type="checkbox" id="refresh-cb" />
             </div>
-            <div id="pac-container" style="margin-left: 5%; margin-top: 0.5%">
+            <div id="pac-container" style="margin-left: 2%; margin-top: 0.5%">
                 <label for="pac-url-tb"><button id="pac-button">Generate PAC: </button></label>
-                <input type="text" style="width: 500px" onfocus="this.select();" onmouseup="return false;" value="" id="pac-url-tb"/>
+                <input type="text" style="width: 250px;" onfocus="this.select();" onmouseup="return false;" value="" id="pac-url-tb"/>
             </div>
+            <div id="stats-container" style="margin-left: 2%; margin-top: 0.5%">
+                <button id="stats-button">Stats</button>
+                <div id="stats-popup">
+                    <p id="stats-text">Loading...</p>
+                </div>
+                <script>
+                var statsButton = document.getElementById("stats-button")
+                var popup = document.getElementById("stats-popup")
+                statsButton.onclick = function() {
+                    if (popup.style.display == "block") {
+                        popup.style.display = "none"
+                    } else {
+                        popup.style.display = "block"
+                    }
+                }
+                </script>
         </div>
         <script type="text/javascript" src="./icons.js"></script>
         <script type="text/javascript" src="./map.js"></script>
@@ -263,7 +287,7 @@
                 if (!(protocsUnk.checked || protocsHttp.checked || protocsHttps.checked || protocsSocks4.checked || protocsSocks5.checked)) protocsAll.checked = true
             }
         }
-        function unCheckAll() {
+        function unCheckAllP() {
             if (protocsUnk.checked || protocsHttp.checked || protocsHttps.checked || protocsSocks4.checked || protocsSocks5.checked) {
                 protocsAll.checked = false
                 
@@ -286,11 +310,11 @@
                 protocsAll.checked = true
             }
         }
-        protocsUnk.onchange = unCheckAll
-        protocsHttp.onchange = unCheckAll
-        protocsHttps.onchange = unCheckAll
-        protocsSocks4.onchange = unCheckAll
-        protocsSocks5.onchange = unCheckAll    
+        protocsUnk.onchange = unCheckAllP
+        protocsHttp.onchange = unCheckAllP
+        protocsHttps.onchange = unCheckAllP
+        protocsSocks4.onchange = unCheckAllP
+        protocsSocks5.onchange = unCheckAllP   
         protocsAll.checked = true
         
         anonsAll = document.getElementById("anons-all")
@@ -313,7 +337,7 @@
                 if (!(anonsUnk.checked || anonsNone.checked || anonsLow.checked || anonsMed.checked || anonsHigh.checked)) anonsAll.checked = true
             }
         }
-        function unCheckAll() {
+        function unCheckAllA() {
             if (anonsUnk.checked || anonsNone.checked || anonsLow.checked || anonsMed.checked || anonsHigh.checked) {
                 anonsAll.checked = false
                 
@@ -337,11 +361,11 @@
                 currentFilters.anons = []
             }
         }
-        anonsUnk.onchange = unCheckAll
-        anonsNone.onchange = unCheckAll
-        anonsLow.onchange = unCheckAll
-        anonsMed.onchange = unCheckAll
-        anonsHigh.onchange = unCheckAll
+        anonsUnk.onchange = unCheckAllA
+        anonsNone.onchange = unCheckAllA
+        anonsLow.onchange = unCheckAllA
+        anonsMed.onchange = unCheckAllA
+        anonsHigh.onchange = unCheckAllA
         anonsAll.checked = true
         
         countriesAll = document.getElementById("countries-all")
