@@ -4,6 +4,9 @@ FROM python:3.10
 # Set the working directory in the container
 WORKDIR /app
 
+# make the save.json file (wont run without it)
+RUN echo "{}" > save.json
+
 # Copy the requirements file into the container
 COPY requirements.txt .
 
