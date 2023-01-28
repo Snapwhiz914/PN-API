@@ -5,7 +5,7 @@ FROM python:3.10
 WORKDIR /app
 
 # make the save.json file (wont run without it)
-RUN echo "{}" > save.json
+RUN echo "[]" > save.json
 
 # Copy the requirements file into the container
 COPY requirements.txt .
