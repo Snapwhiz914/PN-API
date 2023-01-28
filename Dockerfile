@@ -1,11 +1,19 @@
+#Generated (as a base) w/ chatgpt
 FROM python:3.10
 
-ENV CLONE_URL=""
+# Set the working directory in the container
+WORKDIR /app
 
-WORKDIR .
+# Copy the requirements file into the container
+COPY requirements.txt .
 
-RUN if [ -d ".git" ]; then git stash ; git pull ; else git clone "$CLONE_URL" ; fi;
+# Install the dependencies
+RUN pip install --no-cache-dir -r requirements.txt
 
-RUN pip install --no-cache-dir --upgrade -r requirements.txt
+# Copy the rest of the application code into the container
+COPY . .
+
+# Expose the port that Uvicorn will listen on
+EXPOSE 7769
 
 CMD ["uvicorn", "main:app", "--proxy-headers", "--host", "0.0.0.0", "--port", "7769"]
