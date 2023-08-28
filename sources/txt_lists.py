@@ -2,17 +2,19 @@ import requests
 import sys
 import datetime
 import json
-from re import compile
+import re
 sys.path.append('../PN-API')
 from ds import PROXY_PROTOC, ANONYMITY
 
 class TxtLists:
     SCAN_INTERVAL = 720 #most lists update about half daily
+    LABEL = "PubProxy"
 
     def __init__(self, usable_proxies: list):
         self.usable_proxies = usable_proxies
         self.sources = json.load(open("sources/tl_sources.json")) #tl_sources.json from mhddos on github
-        self.ipport_pattern = compile("^((?:\d{1,3}\.){3}\d{1,3}):(\d{1,5})$")
+        self.ipport_pattern = r"((?:\d{1,3}\.){3}\d{1,3}):(\d{1,5})$"
+        self.last_check_time = datetime.datetime.now()
     
     def _proxy_type_to_abbr_str(self, protoc: int):
         abbr = list(PROXY_PROTOC.keys())[list(PROXY_PROTOC.values()).index(protoc)]
@@ -25,7 +27,8 @@ class TxtLists:
                 urls.append(src["url"])
         return urls
 
-    def gather(self, constraints: dict, ignore_time: int = 1440): #24 hrs in minutes
+    def gather(self, constraints: dict): #24 hrs in minutes
+        self.last_check_time = datetime.datetime.now()
         protocs_to_scan = []
         if constraints.get('protocs', None) != None:
             protocs_to_scan = constraints["protocs"]
@@ -36,14 +39,14 @@ class TxtLists:
             urls = self._gen_urls(protoc_num)
             i = 0
             for url in urls:
-                print("TL: protoc " + self._proxy_type_to_abbr_str(protoc_num) + " " + str(i) + "/" + str(len(urls)))
+                print("TL: protoc " + self._proxy_type_to_abbr_str(protoc_num) + " " + str(i+1) + "/" + str(len(urls)))
                 i += 1
                 try:
-                    result = requests.get(url, timeout=5)
-                except requests.exceptions.ReadTimeout:
+                    result = requests.get(url, timeout=10)
+                except requests.exceptions.RequestException:
                     continue
                 for addr in result.text.splitlines():
-                    if not self.ipport_pattern.search(addr): continue
+                    if re.match(self.ipport_pattern, addr) == None: continue
                     if addr in addrs: continue
                     proxies.append({
                         "ip": addr.split(":")[0],

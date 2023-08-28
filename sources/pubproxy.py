@@ -6,9 +6,11 @@ from ds import PROXY_PROTOC, ANONYMITY
 
 class PubProxy:
     SCAN_INTERVAL = 60
+    LABEL = "PubProxy"
 
     def __init__(self, usable_proxies: list):
         self.usable_proxies = usable_proxies
+        self.last_check_time = datetime.datetime.now()
         pass
 
     def _anon_types_to_abbr_str(self, anon_types):
@@ -31,8 +33,8 @@ class PubProxy:
             f"limit=5"
         )
 
-    def gather(self, constraints: dict, ignore_time: int = 1440): #24 hrs in minutes
-        constraints["lc"] = ignore_time if ignore_time <= 1000 else 1000
+    def gather(self, constraints: dict): #24 hrs in minutes
+        self.last_check_time = datetime.datetime.now()
         url = self._gen_url(constraints)
         print(url)
         result = requests.get(url).json()

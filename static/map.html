@@ -254,6 +254,13 @@
                     }
                 }
                 </script>
+            </div>
+            <div id="scan-stats-container" style="margin-left: 2%; margin-bottom: 50%;">
+                <p id="scanner-stats">Scan Queue: 0, Check Back: 0</p>
+            </div>
+            <div id="force-save" style="margin-left: 2%; margin-bottom: 50%;">
+                <button id="save-button">Save</p>
+            </div>
         </div>
         <script type="text/javascript" src="./icons.js"></script>
         <script type="text/javascript" src="./map.js"></script>
@@ -390,6 +397,22 @@
         document.getElementById("pac-button").onclick = function() {
             putb.value = generateProxyURLFromShown()
         }
+
+        var scanStatsP = document.getElementById("scanner-stats")
+        setInterval(() => {
+            fetch(`/scan_stats/`, {
+                method: "GET",
+                cache: 'no-cache',
+            }).then((response) => {
+                response.json().then((stats) => {
+                    scanStatsP.style.color = "white"
+                    scanStatsP.innerHTML = "Scan Q: " + stats.scan_q_len + ", Check back: " + check_back_len
+                })
+            }).catch((error) => {
+                scanStatsP.style.color = "red"
+                scanStatsP.innerHTML = "Error getting scan stats"
+            })
+        }, 5000) //Every 5 seconds, update scanner stats
         </script>
     </body>
 </html>

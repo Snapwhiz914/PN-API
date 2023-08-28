@@ -20,6 +20,13 @@ class IpInfo:
     def __init__(self):
         self.geolocator = Nominatim(user_agent="pn-api")
         self.gc_cache = json.load(open("gc_cache.json", "r"))
+        self.usable_proxies = []
+    
+    def update_usable_proxies(self, proxies):
+        self.usable_proxies = []
+        for prox in filter(lambda x: x["protoc"] == 0 and x["speed"] <= 2.0, proxies):
+            self.usable_proxies.append(prox["ip"])
+        self.geolocator = Nominatim(user_agent="pn-api", proxies=self.usable_proxies)
 
     def _country_box_to_str(self, text):
         first_i = text.find('"')
@@ -77,7 +84,19 @@ class IpInfo:
                     "lon": cached["lon"]
                 }
         if res == None:
-            raw = self.geolocator.geocode(search_name.strip())
+            raw = self.geolocator.geocode({
+                "city": city,
+                "state": region, 
+                "country": country
+            })
+            if raw == None:
+                return {
+                    "country": country,
+                    "region": region,
+                    "city": city,
+                    "lat": 0,
+                    "lon": 0
+                }
             self.gc_cache.append({
                 "name": search_name,
                 "lat": raw.latitude,

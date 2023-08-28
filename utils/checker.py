@@ -2,11 +2,14 @@ import datetime
 from typing import List
 import bs4
 import requests
+import socks
 import sys
 import re
+import urllib3.exceptions
 from re import compile
 sys.path.append('../PN-API')
 from ds import PROXY_PROTOC, ANONYMITY
+import traceback
 
 class Checker:
     def __init__(self, ip_info_getter):
@@ -54,11 +57,23 @@ class Checker:
             return False
         except requests.exceptions.Timeout:
             return False
+        except requests.exceptions.ConnectionError:
+            return False
         except requests.exceptions.JSONDecodeError:
+            return False
+        except urllib3.exceptions.MaxRetryError:
+            return False
+        except urllib3.exceptions.ProxyError:
+            return False
+        except urllib3.exceptions.ProtocolError:
+            return False
+        except urllib3.exceptions.NewConnectionError:
+            return False
+        except socks.ProxyError:
             return False
         except Exception as e:
             print("Unknown error occurred while checking " + proxy["ip"] + ":")
-            print(str(e))
+            traceback.print_exc()
             return False
         return False
 

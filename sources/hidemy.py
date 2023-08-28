@@ -8,10 +8,12 @@ import datetime
 
 class HideMyNameNet:
     SCAN_INTERVAL = 15
+    LABEL = "PubProxy"
 
     def __init__(self, usable_proxies: list):
         self.usable_proxies = usable_proxies
         self.cloudflare_flagged = False
+        self.last_check_time = datetime.datetime.now()
         pass
     
     def _proxy_types_to_abbr_str(self, arr):
@@ -105,6 +107,7 @@ class HideMyNameNet:
         '''
         Gathers proxies (blocking op) until ignore_time (minutes) is hit
         '''
+        self.last_check_time = datetime.datetime.now()
         proxies = []
         current_gathered = 1
         current_trs = []

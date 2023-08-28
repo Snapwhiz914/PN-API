@@ -5,100 +5,71 @@
 #Tools:
 #   - hidemy checker: checks list of addr:port proxies
 #   - ipify: gets info about ips
-#Goal:
-#   - constant list of at least 5 working, moderate-speed (1000ms) proxies at all times
-#   - serve them through an api
-
-#Structure:
-#Proxy gatherer.py:
-# - class that start backgd job to scan lists for proxies
-# - uses all sources and tools available in tools/ and lists/
-# - proxy data structure: dict{ip: str, port: str, country: str, city: str, region: str, speed: int(0-10000)ms,
-# anon: 0(none), 1(low), 2(med), 3(high), protocs: [int], lc(last check, in minutes): int}
-#main.py (this file):
-# - serves an api with these lists
 
 import datetime
 import json
-from ds import PROXY_PROTOC, ANONYMITY
-from sources.hidemy import HideMyNameNet
+import queue
+import threading
+import time
+from string import Template
+from typing import List, Union
+import uvicorn
+
+import pycountry
 from fastapi import FastAPI, Query, Response, status
 from fastapi.responses import PlainTextResponse
 from fastapi.staticfiles import StaticFiles
-from typing import Union, List
-import threading
-import time
-import queue
-import pycountry
 
-from sources.pubproxy import PubProxy
+from ds import PROXY_PROTOC
+from sources import src_lists
 from sources.txt_lists import TxtLists
 from utils.checker import Checker
 from utils.ipinfo import IpInfo
-from string import Template
 
+#objects
 idle_scan_constraints = {
-    "anon": [ANONYMITY["high"], ANONYMITY["med"]],
-    "speed": 10000
+    "speed": 7000
 }
-
-current_proxies = json.load(open("save.json"))
-
-hm = HideMyNameNet(usable_proxies=current_proxies)
-pp = PubProxy(usable_proxies=current_proxies)
-tl = TxtLists(usable_proxies=current_proxies)
-sources = [pp, hm, tl]
-
+scan_q = queue.Queue()
 ipinfo = IpInfo()
 checker = Checker(ipinfo)
+check_back_on = []
 
-pac_template = Template(open("pac_template.js", "r").read())
-
+#Load saves
+save_obj = json.load(open("save.json"))
+current_proxies = save_obj["saves"]
 scan_q = queue.Queue()
 for proxy in current_proxies:
-    proxy["lc"] = datetime.datetime.fromisoformat(proxy["lc"])
-    if int((datetime.datetime.now()-proxy["lc"]).seconds/60) >= 30:
-        scan_q.put(proxy)
+    proxy["lc"] = datetime.datetime.fromtimestamp(proxy["lc"])
+    scan_q.put(proxy)
 
-def save():
-    json.dump(current_proxies, open("save.json", "w+"), default=str)
-    ipinfo.write_out_cache()
-    print("saved proxies")
+#Load sources
+sources = []
+for src_class in src_lists:
+    sources.append(src_class(usable_proxies=[]))
 
-app = FastAPI(on_shutdown=[save])
-app.mount("/app", StaticFiles(directory="static"), name="static")
+#Helpers
+def get_now_ts() -> int:
+    return round(datetime.datetime.now().timestamp())
 
 def protoc_num_to_prefix(num):
     p_type = list(PROXY_PROTOC.keys())[list(PROXY_PROTOC.values()).index(num)]
     return p_type + "://"
 
-def bkgd_scan():
-    global current_proxies, scan_q
-    minutes_since_start = 720
-    while True:
-        for s in sources:
-            if minutes_since_start%s.SCAN_INTERVAL == 0:
-                print("MAIN: Scanning from source " + type(s).__name__ + "...")
-                s.update_usable_proxies(current_proxies)
-                res = []
-                try:
-                    res = s.gather(idle_scan_constraints)
-                except: pass
-                print("MAIN: Got " + str(len(res)) + " proxies from " + type(s).__name__)
-                for prox in res:
-                    for proxy in current_proxies:
-                        if proxy["ip"] == prox["ip"]: continue
-                    scan_q.put(prox)
-        time.sleep(60)
-        minutes_since_start += 1
-
-def bkgd_check_driver():
-    global current_proxies, scan_q
-    while True:
-        time.sleep(15*60) #Every 15 minutes
-        for proxy in current_proxies:
-            if int((datetime.datetime.now()-proxy["lc"]).seconds/60) >= 30:
-                scan_q.put(proxy)
+def save():
+    last_scan_times = {}
+    for source in sources:
+        last_scan_times[source.LABEL] = round(source.last_check_time.timestamp())
+    to_save_obj = {
+        "last_scan_times": last_scan_times,
+        "saves": current_proxies
+    }
+    def serialize_dt(dt):
+        if type(dt) == datetime.datetime: return dt.timestamp()
+        return str(dt)
+    json.dump(to_save_obj, open("save.json", "w+"), default=serialize_dt)
+    ipinfo.write_out_cache()
+    print("saved proxies")
 
 def proxy_in_proxy_list(proxy):
     for prox in current_proxies:
@@ -114,27 +85,65 @@ def get_index_of_proxy(proxy):
         if current_proxies[i]["ip"] == proxy["ip"]: return i
     return -1
 
-def bkgd_check():
+#Threads
+
+def scan(source):
+    global current_proxies, scan_q
+    print("MAIN: Scanning from source " + type(source).__name__ + "...")
+    source.update_usable_proxies(current_proxies)
+    res = []
+    try:
+        res = source.gather(idle_scan_constraints)
+    except Exception as e:
+        print(str(e))
+        pass
+    print("MAIN: Got " + str(len(res)) + " proxies from " + type(source).__name__)
+    for prox in res:
+        if not proxy_in_proxy_list(prox): scan_q.put(prox)
+    threading.Timer(source.SCAN_INTERVAL*60, scan, args=(source,)).start()
+for src in sources:
+    threading.Thread(target=scan, args=(src,)).start()
+
+def check():
     global current_proxies, scan_q
     while True:
         to_check = scan_q.get(block=True)
-        print("CHECKER: Checking " + tl._proxy_type_to_abbr_str(to_check["protocs"][0]) + "://" + to_check["ip"] + "...")
+        #print("CHECKER: Checking " + TxtLists._proxy_type_to_abbr_str(None, to_check["protocs"][0]) + "://" + to_check["ip"] + "...")
         res = checker.check(to_check)
         if res != False:
             if proxy_in_proxy_list(res):
                 current_proxies[get_index_of_proxy(res)] = res
             else:
                 current_proxies.append(res)
-            print("CHECKER: " + to_check["ip"] + " has PASSED")
+            #print("CHECKER: " + to_check["ip"] + " has PASSED")
         else:
             if proxy_in_proxy_list(to_check): remove_proxy_from_list(to_check)
-            print("CHECKER: " + to_check["ip"] + " has FAILED")
+            #print("CHECKER: " + to_check["ip"] + " has FAILED")
+            check_back_on.append(to_check)
 
-def bkgd_save(): 
+def check_driver():
+    global current_proxies, scan_q
     while True:
-        json.dump(current_proxies, open("save.json", "w+"), default=str)
-        ipinfo.write_out_cache()
-        time.sleep(5*60)
+        time.sleep(15*60) #Every 15 minutes
+        for proxy in current_proxies:
+            if int((datetime.datetime.now()-proxy["lc"]).seconds/60) >= 30:
+                scan_q.put(proxy)
+        for proxy in check_back_on:
+            scan_q.put(proxy)
+            for prox in check_back_on:
+                if proxy["ip"] == prox["ip"]: check_back_on.remove(prox)
+
+for i in range(100): #100 Background scan threads
+    threading.Thread(target=check).start()
+threading.Thread(target=check_driver).start()
+threading.Thread(target=save).start()
+
+#App definition
+app = FastAPI(on_shutdown=[save])
+app.mount("/app", StaticFiles(directory="static"), name="static")
+@app.on_event("shutdown")
+def shutdown_save():
+    save()
 
 @app.get("/proxy/")
 def return_proxy(countries: Union[List[str], None] = Query(default=None),
@@ -146,20 +155,10 @@ def return_proxy(countries: Union[List[str], None] = Query(default=None),
     limit: int = 20):
     collected_proxies = []
     for p in current_proxies:
-        if countries != None:
-            approved = True
-            for country in countries:
-                if p["country"] not in countries:
-                    approved = False
-            if not approved: continue
+        if countries != None and p["country"] not in countries: continue
         if city != None and p["city"] != city: continue
         if speed != None and p["speed"] > speed: continue
-        if anons != None:
-            approved = True
-            for anon in anons:
-                if p["anon"] not in anons:
-                    approved = False
-            if not approved: continue
+        if anons != None and p["anon"] not in anons: continue
         if protocs != None:
             approved = False
             for protoc in protocs:
@@ -175,6 +174,7 @@ def return_proxy(countries: Union[List[str], None] = Query(default=None),
         return collected_proxies
     return collected_proxies
 
+pac_template = Template(open("pac_template.js", "r").read())
 @app.get("/pac/")
 def return_pac(
     response: Response,
@@ -222,21 +222,34 @@ def set_constraints(
         if not (p<=3 and p>= 0):
             response.status_code == status.HTTP_400_BAD_REQUEST
             return
-    idle_scan_constraints = {
-        "country": country or idle_scan_constraints["country"],
-        "city": city or idle_scan_constraints["city"],
-        "speed": speed or idle_scan_constraints["speed"],
-        "anon": anon or idle_scan_constraints["anon"],
-        "protocs": protocs or idle_scan_constraints["protocs"],
-        "lc": last_check or idle_scan_constraints["lc"]
-    }
+    if country != None: idle_scan_constraints["country"] = country
+    if city != None: idle_scan_constraints["city"] = city
+    if speed != None: idle_scan_constraints["speed"] = speed
+    if anon != None: idle_scan_constraints["anon"] = anon
+    if protocs != None: idle_scan_constraints["protocs"] = protocs
+    if last_check != None: idle_scan_constraints["lc"] = last_check
 
 @app.get("/constraints/")
 def get_constraints():
     return idle_scan_constraints
 
-threading.Thread(target=bkgd_scan).start()
-for i in range(10): #10 Background scan threads
-    threading.Thread(target=bkgd_check).start()
-threading.Thread(target=bkgd_check_driver).start()
-threading.Thread(target=bkgd_save).start()
+@app.get("/scan_stats")
+def get_scan_stats():
+    return {
+        "scan_q_len": scan_q.qsize(),
+        "check_back_len": len(check_back_on),
+        "current_proxies_len": len(current_proxies)
+    }
+
+@app.post("/force_save")
+def force_save():
+    try:
+        save()
+        return {"success": True}
+    except Exception as e:
+        print("Force save request error: " + str(e))
+        return {"success": False}
+
+if __name__ == "__main__":
+    print("http://127.0.0.1:8000/app/map.html")
+    uvicorn.run(app, host="0.0.0.0", port=8000)
