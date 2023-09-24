@@ -400,7 +400,7 @@
 
         var scanStatsP = document.getElementById("scanner-stats")
         setInterval(() => {
-            fetch(`/scan_stats/`, {
+            fetch(window.location.origin + `/scan_stats/`, {
                 method: "GET",
                 cache: 'no-cache',
             }).then((response) => {

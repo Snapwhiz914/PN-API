@@ -154,3 +154,4 @@ cython_debug/
 #SPecificallty this project:
 save.json
 .DS_Store
+gc_cache.json

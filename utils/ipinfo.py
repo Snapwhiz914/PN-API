@@ -41,16 +41,37 @@ class IpInfo:
     def write_out_cache(self):
         json.dump(self.gc_cache, open("gc_cache.json", "w+"))
     
+    def _protoc_num_to_prefix(self, num):
+        proxy_protocs = {"http": 0,"https": 1,"socks4": 2,"socks5": 3}
+        p_type = list(proxy_protocs.keys())[list(proxy_protocs.values()).index(num)]
+        return p_type + "://"
+    def _get_best_usable_proxy(self):
+        selected = self.usable_proxies[0]
+        for p in self.usable_proxies:
+            if p["speed"] < selected["speed"]:
+                selected = p
+        return self._protoc_num_to_prefix(p["protocs"][0]) + p["ip"] + ":" + str(p["port"])
+    
     def get_info(self, ip):
         cities = []
         regions = []
         countries = []
         for src in self.SOURCES:
-            res = requests.post("https://www.iplocation.net/get-ipdata", data={
-                "ip": ip,
-                "source": src,
-                "ipv": 4
-            }).json()
+            res = None
+            try:
+                res = requests.post("https://www.iplocation.net/get-ipdata", data={
+                    "ip": ip,
+                    "source": src,
+                    "ipv": 4
+                }).json()
+            except requests.exceptions.RequestException:
+                res = requests.post("https://www.iplocation.net/get-ipdata", data={
+                    "ip": ip,
+                    "source": src,
+                    "ipv": 4
+                }, proxies={
+                    "https": self._get_best_usable_proxy()
+                }).json()
             if res.get("res", None) == None: continue
             countries.append(
                 res["res"].get("countryCode", None) or
