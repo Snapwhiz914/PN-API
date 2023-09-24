@@ -259,7 +259,23 @@
                 <p id="scanner-stats">Scan Queue: 0, Check Back: 0</p>
             </div>
             <div id="force-save" style="margin-left: 2%; margin-bottom: 50%;">
-                <button id="save-button">Save</p>
+                <button id="save-button">Save</button>
+                <script>
+                    var saveButton = document.getElementById("stats-button")
+                    statsButton.onclick = function() {
+                        fetch(`/force_save`, {
+                            method: "POST",                            
+                        }).then((response) => {
+                            response.json().then((r) => {
+                                if (r.success == true) {
+                                    saveButton.style.color = "green"
+                                } else {
+                                    saveButton.style.color = "red"
+                                }
+                            })
+                        })
+                    }
+                    </script>
             </div>
         </div>
         <script type="text/javascript" src="./icons.js"></script>
