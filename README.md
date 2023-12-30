@@ -4,7 +4,8 @@
 An API made to find proxies and filter them to be used in a .PAC file or a proxychain software.
  - Collects proxies from almost 100 sources
  - Checks each proxy and determines its speed, approximate location, and anonymity
- - Serves a site that displays all of the proxies on a map and generates a PAC file to use
+ - Serves a website that displays all found proxies on a map using an IP location API
+ - Serves a dynamic, configurable PAC file for use in browser or operating system proxy settings
  - Saves proxies in between launches (automatically saves every 5 minutes)
 
 ## Installation
