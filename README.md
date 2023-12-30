@@ -37,15 +37,15 @@ After starting the application (or container), navigate to the Web UI on port 77
 
 ## API Endpoints
 
-In case you want to access the data in a programatic format, here are the API endpoints defined (this is how the web ui works):
- - GET /proxy: Access the scanned proxies, the default limit returned is 20. Paging is not implemented. Query arguments:
+In case you want to access the data in a programatic format, here are the API endpoints (the same one that the website uses):
+ - GET /proxy: Access the scanned proxies, the default limit returned is 20. Paging is not implemented, since the following query arguments can fine tune your search:
    - limit (int): The limit of proxies to return
    - city (string): Filter by city name
    - countries (string list): Filter by multiple country names
    - speed (int): The minimum speed (in ms) of a proxy
    - protocs (int list): Filter by protocol. http: 0, https: 1, socks4: 2, socks5: 3
    - last_check (int): The maximum last updated check (in minutes) of a proxy
- - GET /pac: Returns a .js file in the PAC format, using the ```pac_template.js``` file as a template. Query arguements to filter the proxy selection are the same as above.
+ - GET /pac: Returns a .js file in the PAC format, using the ```pac_template.js``` file as a template. Query arguments to filter the proxy selection are the same as above.
  - POST /constraints: Constrain the scanner to look for proxies matching only the filters given. Note that this only affects the HideMy.net and PubProxy scans (which don't return much anyway), so it generally won't have any use.
  - GET /constraints: Read the current constraints.
  - GET /scan_stats: Returns information about the scanner in a JSON format.
