@@ -134,8 +134,3 @@ class IpInfo:
             "lat": res["lat"],
             "lon": res["lon"]
         }
-
-if __name__ == '__main__':
-    ii = IpInfo()
-    print(ii.get_info("99.76.56.237"))
-    ii.write_out_cache()
