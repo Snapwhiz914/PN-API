@@ -2,8 +2,13 @@ import requests
 from bs4 import BeautifulSoup
 import pycountry
 from collections import Counter
+import certifi
+import ssl
+import geopy.geocoders
 from geopy.geocoders import Nominatim
 import json
+import os
+from utils.config import Config
 
 class IpInfo:
     SOURCES = [
@@ -18,15 +23,20 @@ class IpInfo:
     ]
 
     def __init__(self):
-        self.geolocator = Nominatim(user_agent="pn-api")
-        self.gc_cache = json.load(open("gc_cache.json", "r"))
+        # ctx = ssl.create_default_context(cafile=certifi.where())
+        # geopy.geocoders.options.default_ssl_context = ctx   
+        self.geolocator = Nominatim(user_agent="pn-api", domain=Config.get_conf_option("nominatim_domain"), scheme=Config.get_conf_option("nominatim_scheme"))
+        if os.path.exists("gc_cache.json"):
+            self.gc_cache = json.load(open(os.path.join("persistent", "gc_cache.json"), "r"))
+        else:
+            self.gc_cache = []
         self.usable_proxies = []
     
     def update_usable_proxies(self, proxies):
         self.usable_proxies = []
         for prox in filter(lambda x: x["protoc"] == 0 and x["speed"] <= 2.0, proxies):
             self.usable_proxies.append(prox["ip"])
-        self.geolocator = Nominatim(user_agent="pn-api", proxies=self.usable_proxies)
+        self.geolocator = Nominatim(user_agent="pn-api", proxies=self.usable_proxies, domain=Config.get_conf_option("nominatim_domain"), scheme=Config.get_conf_option("nominatim_scheme"))
 
     def _country_box_to_str(self, text):
         first_i = text.find('"')
@@ -39,18 +49,21 @@ class IpInfo:
             return "UNKNOWN"
     
     def write_out_cache(self):
-        json.dump(self.gc_cache, open("gc_cache.json", "w+"))
+        json.dump(self.gc_cache, open(os.path.join("persistent", "gc_cache.json"), "w+"))
     
-    def _protoc_num_to_prefix(self, num):
-        proxy_protocs = {"http": 0,"https": 1,"socks4": 2,"socks5": 3}
-        p_type = list(proxy_protocs.keys())[list(proxy_protocs.values()).index(num)]
-        return p_type + "://"
     def _get_best_usable_proxy(self):
         selected = self.usable_proxies[0]
         for p in self.usable_proxies:
             if p["speed"] < selected["speed"]:
                 selected = p
-        return self._protoc_num_to_prefix(p["protocs"][0]) + p["ip"] + ":" + str(p["port"])
+        return utils.protoc_num_to_prefix(p["protocs"][0]) + p["ip"] + ":" + str(p["port"])
+    
+    def _remove_nones(self, l):
+        for item in l:
+            if l is None: del l
+    
+    def _most_common_or_blank(self, counter_result):
+        return counter_result[0][0] if len(counter_result) > 0 else ""
     
     def get_info(self, ip):
         cities = []
@@ -73,6 +86,14 @@ class IpInfo:
                     "https": self._get_best_usable_proxy()
                 }).json()
             if res.get("res", None) == None: continue
+            if res["res"].get("latitude", None) != None and res["res"].get("longitude", None) != None:
+                return {
+                    "country": res["res"].get("countryCode", None),
+                    "region": res["res"].get("regionName", None),
+                    "city": res["res"].get("cityName"),
+                    "lat": res["res"]["latitude"],
+                    "lon": res["res"]["longitude"]
+                }
             countries.append(
                 res["res"].get("countryCode", None) or
                 res["res"].get("country", None) or
@@ -93,9 +114,10 @@ class IpInfo:
                 res["res"].get("city", None) or
                 (res["res"]["location"]["city"] if res["res"].get("location", None) != None else None)
             )
-        country = Counter(countries).most_common(1)[0][0]
-        region = Counter(regions).most_common(1)[0][0]
-        city = Counter(cities).most_common(1)[0][0]
+        countries, regions, cities = self._remove_nones(countries), self._remove_nones(regions), self._remove_nones(cities)
+        country = self._most_common_or_blank(Counter(countries).most_common(1))
+        region = self._most_common_or_blank(Counter(regions).most_common(1))
+        city = self._most_common_or_blank(Counter(cities).most_common(1))
         search_name = (city + ", " if city != "" else "") + region + ", " + country
         res = None
         for cached in self.gc_cache:
@@ -105,6 +127,14 @@ class IpInfo:
                     "lon": cached["lon"]
                 }
         if res == None:
+            if country == "" and region == "":
+                return {
+                    "country": country,
+                    "region": region,
+                    "city": city,
+                    "lat": None,
+                    "lon": None
+                }
             raw = self.geolocator.geocode({
                 "city": city,
                 "state": region, 

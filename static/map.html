@@ -261,7 +261,7 @@
             <div id="force-save" style="margin-left: 2%; margin-bottom: 50%;">
                 <button id="save-button">Save</button>
                 <script>
-                    var saveButton = document.getElementById("stats-button")
+                    var saveButton = document.getElementById("save-button")
                     statsButton.onclick = function() {
                         fetch(`/force_save`, {
                             method: "POST",                            
@@ -422,7 +422,7 @@
             }).then((response) => {
                 response.json().then((stats) => {
                     scanStatsP.style.color = "white"
-                    scanStatsP.innerHTML = "Scan Q: " + stats.scan_q_len + ", Check back: " + check_back_len
+                    scanStatsP.innerHTML = "Scan Q: " + stats.scan_q_len + ", Check back: " + stats.check_back_len
                 })
             }).catch((error) => {
                 scanStatsP.style.color = "red"

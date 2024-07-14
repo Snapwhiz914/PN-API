@@ -2,9 +2,11 @@ import bs4
 import requests
 import sys
 sys.path.append('../PN-API')
-from ds import PROXY_PROTOC, ANONYMITY
+from ds import ANONYMITY
 import pycountry
 import datetime
+import utils
+from utils import PROXY_PROTOC
 
 class HideMyNameNet:
     SCAN_INTERVAL = 15
@@ -75,16 +77,12 @@ class HideMyNameNet:
         except:
             return "UNKNOWN"
     
-    def _protoc_num_to_prefix(self, num):
-        p_type = list(PROXY_PROTOC.keys())[list(PROXY_PROTOC.values()).index(num)]
-        return p_type + "://"
-    
     def _get_best_usable_proxy(self):
         selected = self.usable_proxies[0]
         for p in self.usable_proxies:
             if p["speed"] < selected["speed"]:
                 selected = p
-        return self._protoc_num_to_prefix(p["protocs"][0]) + p["ip"] + ":" + str(p["port"])
+        return utils.protoc_num_to_prefix(p["protocs"][0]) + p["ip"] + ":" + str(p["port"])
     
     def _get_page(self, constraints, start):
         if self.cloudflare_flagged == False:

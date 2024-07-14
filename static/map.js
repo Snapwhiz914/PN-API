@@ -73,7 +73,7 @@ function updateProxies() {
       console.log(proxArr)
       proxArr.forEach(function(part, index, theArray) {
         theArray[index].speed = Math.round(part.speed*1000)
-        theArray[index].lc = new Date(Date.now()-Date.parse(part.lc)).getMinutes()
+        theArray[index].lc = new Date(Date.now()-Date.parse(part.last_check)).getMinutes()
       })
       proxies = proxArr
       updateMarkers()
@@ -90,17 +90,14 @@ function updateProxies() {
 }
 
 function generatePopupString(proxy) {
-  var protocs = ""
-  for (var p of proxy.protocs) {
-    protocs += protocsCode[p] + " "
-  }
   var hrs = Math.floor(proxy.lc/60).toString().padStart(2, '0')
   var mins = (proxy.lc%60).toString().padStart(2, '0')
-  return proxy.ip + ":" + proxy.port.toString() + "<br>"
+  return proxy.uri + "<br>"
     + proxy.city + ", " + proxy.region + ", " + proxy.country + "<br>"
-    + "Protocols: " + protocs + "<br>"
+    + "Protocols: " + protocsCode[proxy.protoc] + "<br>"
     + "Anon: " + anonCode[proxy.anon] + "<br>"
     + "Speed: " + proxy.speed.toString() + "ms<br>"
+    + "Reliability: " + proxy.reliability + "pts<br>"
     + `Last Checked: (${hrs}h ${mins}m)`
 }
 
@@ -108,7 +105,7 @@ function updateMarkers() {
   for (var prox of proxies) {
     let alreadyHasMarker = false
     for (var m of markers) {
-      if (m.options.title == prox.ip) {
+      if (m.options.title == prox.uri) {
         alreadyHasMarker = true
         m._popup._content = generatePopupString(prox)
       }
@@ -146,8 +143,9 @@ function updateMarkers() {
       default:
         icon = blackIcon
     }
+    if (prox.lat == null || prox.lon == null) continue
     var newMarker = L.marker([prox.lat, prox.lon], {
-      title: prox.ip,
+      title: prox.uri,
       icon: icon
     })
     newMarker.bindPopup(generatePopupString(prox))
@@ -160,9 +158,9 @@ function updateMarkers() {
     }
     
     if (otherMarkerAtSamePos != undefined) { //meaning that there is another marker at the same position (and we cant have that)
-      console.log("There is another marker at " + prox.ip)
+      // console.log("There is another marker at " + prox.uri)
       if (clusters.get(newMarker.getLatLng().lat) == undefined) { // if there isnt a cluster yet
-        console.log("There is NOT a cluster at " + prox.ip + "'s position yet")
+        // console.log("There is NOT a cluster at " + prox.uri + "'s position yet")
         var markerCluster = L.markerClusterGroup({
 	      showCoverageOnHover: true,
 	      zoomToBoundsOnClick: false,
@@ -183,7 +181,7 @@ function updateMarkers() {
         markerCluster.addLayer(newMarker)
         map.addLayer(markerCluster)
       } else { //there is a cluster, meaning that we need to add it to the existing one
-        console.log("There IS a cluster at " + prox.ip + "'s position, adding it")
+        console.log("There IS a cluster at " + prox.uri + "'s position, adding it")
         var markerCluster = clusters.get(newMarker.getLatLng().lat)
         markerCluster.addLayer(newMarker)
         markerCluster.refreshClusters()
@@ -210,10 +208,11 @@ function updateMap() {
     if (prox.speed >= currentFilters.speed) shouldShow = false
     var markerForP = undefined
     for (var m of markers) {
-      if (m.options.title == prox.ip) markerForP = m
+      if (m.options.title == prox.uri) markerForP = m
     }
     if (markerForP == undefined) {
-      console.log("For some reason, markerForP is undefined for " + prox.ip + ". This is definetly a code problem.")
+      console.log("For some reason, markerForP is undefined for " + prox.uri + ". This is definetly a code problem.")
+      continue
     }
     if (shouldShow) {
       markerForP.setOpacity(1.0)
@@ -235,11 +234,11 @@ function updateStats() {
   a = [0, 0, 0, 0, 0]
   speedTotal = 0
   for (var proxy of proxies) {
-    if (proxy.protocs[0] == -1) p[0] = p[0] + 1
-    if (proxy.protocs[0] == 0) p[1] = p[1] + 1
-    if (proxy.protocs[0] == 1) p[2] = p[2] + 1
-    if (proxy.protocs[0] == 2) p[3] = p[3] + 1
-    if (proxy.protocs[0] == 3) p[4] = p[4] + 1
+    if (proxy.protoc == -1) p[0] = p[0] + 1
+    if (proxy.protoc == 0) p[1] = p[1] + 1
+    if (proxy.protoc == 1) p[2] = p[2] + 1
+    if (proxy.protoc == 2) p[3] = p[3] + 1
+    if (proxy.protoc == 3) p[4] = p[4] + 1
     
     if (proxy.anon == -1) a[0] = a[0] + 1
     if (proxy.anon == 0) a[1] = a[1] + 1
@@ -277,13 +276,20 @@ function updateCountryDropdown() {
   }
   
   for (var countryCode of currentCountriesCodes) {
+    if (countryCode == "") continue
     if (currentlyListedCCs.indexOf(countryCode) == -1) { //If it isn't shown and should be
       var newLi = document.createElement("li")
       newLi.className = "country-li"
       var newCB = document.createElement("input")
       newCB.type = "checkbox"
       newLi.appendChild(newCB)
-      newLi.innerHTML = newLi.innerHTML.concat(countryCode + " (" + regionNamesInEnglish.of(countryCode) + ")")
+      var name = "N/A"
+      try {
+        regionNamesInEnglish.of(countryCode)
+      } catch (error) {
+        console.log(error)
+      }
+      newLi.innerHTML = newLi.innerHTML.concat(countryCode + " (" + name + ")")
       countryDropdownContainer.appendChild(newLi)
     }
   }

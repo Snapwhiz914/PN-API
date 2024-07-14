@@ -151,7 +151,8 @@ cython_debug/
 #  option (not recommended) you can uncomment the following to ignore the entire idea folder.
 #.idea/
 
-#SPecificallty this project:
+#Specificallty this project:
 save.json
 .DS_Store
 gc_cache.json
+config.json

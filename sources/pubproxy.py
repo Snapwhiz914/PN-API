@@ -2,7 +2,8 @@ import requests
 import sys
 import datetime
 sys.path.append('../PN-API')
-from ds import PROXY_PROTOC, ANONYMITY
+from ds import ANONYMITY
+from utils import PROXY_PROTOC
 
 class PubProxy:
     SCAN_INTERVAL = 60
@@ -33,10 +34,9 @@ class PubProxy:
             f"limit=5"
         )
 
-    def gather(self, constraints: dict): #24 hrs in minutes
+    def gather(self, constraints: dict, ignore_time: int = 60): #24 hrs in minutes
         self.last_check_time = datetime.datetime.now()
         url = self._gen_url(constraints)
-        print(url)
         result = requests.get(url).json()
         proxies = []
         for r in result["data"]:
