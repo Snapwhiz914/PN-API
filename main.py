@@ -213,7 +213,7 @@ def return_proxy(countries: Union[List[str], None] = Query(default=None),
         if last_check != None and (datetime.datetime.now() - p.last_check).minutes > last_check: continue
         collected_proxies.append(p)
     if len(collected_proxies) > limit:
-        collected_proxies.sort(key= lambda x: x.speed, reverse=True)
+        collected_proxies.sort(key= lambda x: x.speed)
         for i in range(len(collected_proxies)-limit):
             collected_proxies.pop()
         return collected_proxies
