@@ -123,7 +123,7 @@ def check():
     while True:
         to_check = check_q.get(block=True)
         if type(to_check) == Proxy:
-            res = checker.check(to_check, timeout=to_check.speed+2)
+            res = checker.check(to_check, timeout=(to_check.speed+2 if to_check.speed is not None else 10))
             if res != False:
                 to_check.speed = res[0]
                 to_check.reliability = to_check.reliability + 1
