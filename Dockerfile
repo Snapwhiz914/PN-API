@@ -5,18 +5,15 @@ FROM python:3.10
 VOLUME /app
 WORKDIR /app
 
+# Copy the application code into the container
+COPY . .
+
 # make the save.json file (wont run without it)
 RUN echo '{"last_scan_times": {}, "saves": []}' > persistent/save.json
-RUN echo '{"startup_min_lastcheck_to_rescan": 30,"nominatim_domain": "nominatim.openstreetmap.org","live_check_freq": 10,"dead_check_freq": 60}' > persistent/save.json
-
-# Copy the requirements file into the container
-COPY requirements.txt .
+RUN echo '{"startup_min_lastcheck_to_rescan": 30,"nominatim_domain": "nominatim.openstreetmap.org","live_check_freq": 10,"dead_check_freq": 60}' > persistent/config.json
 
 # Install the dependencies
 RUN pip install --no-cache-dir -r requirements.txt
-
-# Copy the rest of the application code into the container
-COPY . .
 
 # Expose the port that Uvicorn will listen on
 EXPOSE 7769
