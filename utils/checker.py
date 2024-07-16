@@ -39,7 +39,7 @@ class Checker:
             res2 = requests.get("https://reddit.com", proxies={
                 "https": addr
             }, timeout=timeout)
-            return (res1.total_seconds() + res2.total_seconds())/2
+            return (res1.elapsed.total_seconds() + res2.elapsed.total_seconds())/2
         except Exception as e:
             return False
 
