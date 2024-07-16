@@ -237,7 +237,7 @@ def return_pac(
         return ""
     addr_arr = []
     for p in proxies:
-        addr_arr.append(("PROXY" if p.get_protoc_number()<=1 else "SOCKS") + " " + p.uri)
+        addr_arr.append(("PROXY" if p.get_protoc_number()<=1 else "SOCKS") + " " + p.uri.split("//")[1])
     return Response(content=pac_template.substitute({"p_arr": str(addr_arr), "lb": str(lb).lower()}),
         media_type="application/x-ns-proxy-autoconfig")
 

@@ -41,7 +41,7 @@ function FindProxyForURL(url, host) {
     }
     var pString = "";
     for (var prox of PROXIES) {
-        pString = pString + prox + " ";
+        pString = pString + prox + "; ";
     }
     return pString + "DIRECT";
 }
