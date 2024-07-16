@@ -26,7 +26,7 @@ class IpInfo:
         # ctx = ssl.create_default_context(cafile=certifi.where())
         # geopy.geocoders.options.default_ssl_context = ctx   
         self.geolocator = Nominatim(user_agent="pn-api", domain=Config.get_conf_option("nominatim_domain"), scheme=Config.get_conf_option("nominatim_scheme"))
-        if os.path.exists("gc_cache.json"):
+        if os.path.exists(os.path.join("persistent", "gc_cache.json")):
             self.gc_cache = json.load(open(os.path.join("persistent", "gc_cache.json"), "r"))
         else:
             self.gc_cache = []
