@@ -62,6 +62,6 @@ In case you want to access the data in a programatic format, here are the API en
 
  - The scan time options present in the config file in /persistent don't do anything at the moment, however the nominatim options are respected
  - if ipinfo gives the latitude and longitude for an IP, then that will be used instead of a nominatim lookup; this is because the public nominatim API has a maximum of 1 request per second and there is no mechanism in the code to respect that.
- - A proxy must be able to access the following sites successfully to be deemed alive: [https://httpbin.org], [https://google.com], [https://reddit.com]
+ - A proxy must be able to access the following sites successfully to be deemed alive: [httpbin.org](https://httpbin.org), [google.com](https://google.com), [reddit.com](https://reddit.com)
  - I do not endorse/own any proxies that this software may display, nor can I guarantee that these proxies will not collect any personal information (IP address, network traffic, etc); In other words, use at your own risk.
- - Proxy sources from (MHDDoS)[https://github.com/MatrixTM/MHDDoS/blob/main/config.json#L4]
+ - Proxy sources from [MHDDoS](https://github.com/MatrixTM/MHDDoS/blob/main/config.json#L4); PN-API will automatically redownload this file weekly
