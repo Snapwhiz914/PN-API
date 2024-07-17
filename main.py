@@ -160,7 +160,7 @@ def scan_lives():
     while True:
         for proxy in alive:
             check_q.put(proxy)
-            time.sleep(total_list_seconds/(len(dead)+1))
+            time.sleep(total_list_seconds/(len(alive)+1))
         time.sleep(0.01)
 
 def scan_deads():
