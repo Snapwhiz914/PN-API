@@ -49,7 +49,10 @@ class IpInfo:
             return "UNKNOWN"
     
     def write_out_cache(self):
-        json.dump(self.gc_cache, open(os.path.join("persistent", "gc_cache.json"), "w+"))
+        cache_file_path = open(os.path.join("persistent", "gc_cache.json"))
+        with open(cache_file_path + ".tmp", 'w+') as tmp_save:
+            json.dump(self.gc_cache, tmp_save)
+        os.rename(cache_file_path + ".tmp", cache_file_path)
     
     def _get_best_usable_proxy(self):
         selected = self.usable_proxies[0]

@@ -156,3 +156,4 @@ save.json
 .DS_Store
 gc_cache.json
 config.json
+/persistent

@@ -10,7 +10,7 @@ class Config:
         if not os.path.exists(_path):
             print("No config file, making new")
             file = open(_path, "w+")
-            file.write('{"startup_min_lastcheck_to_rescan": 15,"nominatim_domain": "","nominatim_scheme": "","live_check_freq": 10,"dead_check_freq": 60}')
+            file.write('{"startup_min_lastcheck_to_rescan": 15,"nominatim_domain": "","nominatim_scheme": "","live_check_freq": 10}')
             file.close()
         _current_config_obj = json.load(open(_path, "r"))
 

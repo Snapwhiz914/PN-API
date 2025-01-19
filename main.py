@@ -35,11 +35,10 @@ check_q = queue.Queue()
 ipinfo = IpInfo()
 checker = Checker()
 alive = []
-dead = []
 
 #Load saves
-for proxy in json.load(open(os.path.join("persistent", "save.json")))["saves"] if os.path.exists(os.path.join("persistent", "save.json")) else []:
-    if proxy["last_check"] == None: continue
+save_obj = json.load(open(os.path.join("persistent", "save.json")))["saves"] if os.path.exists(os.path.join("persistent", "save.json")) else []
+for proxy in save_obj:
     proxy["last_check"] = datetime.datetime.fromisoformat(proxy["last_check"])
     if datetime.datetime.now() > proxy["last_check"] + datetime.timedelta(minutes=Config.get_conf_option("startup_min_lastcheck_to_rescan")):
         check_q.put(proxy["uri"])
@@ -52,36 +51,20 @@ for src_class in src_lists: sources.append(src_class(usable_proxies=[]))
 def get_now_ts() -> int:
     return round(datetime.datetime.now().timestamp())
 
-def proxy_in_either_list(uri):
+def proxy_in_list(uri):
     for prox in alive:
-        if prox.uri == uri: return True
-    for prox in dead:
         if prox.uri == uri: return True
     return False
 
-def remove_proxy_from_either(proxy):
-    global alive, dead
-    for prox in alive:
-        if proxy.uri == prox.uri: alive.remove(prox)
-    for prox in dead:
-        if proxy.uri == prox.uri: prox.remove(prox)
-
-def get_index_of_proxy_in_list(proxy_list, proxy):
-    i = 0
-    for prox in proxy_list:
-        if proxy.uri == prox.uri: return i
-        i+=1
-    return -1
-
-def transfer_to_alive(proxy):
+def remove_proxy_from_list(uri):
     global alive
-    remove_proxy_from_either(proxy)
-    alive.append(proxy)
+    for prox in alive:
+        if uri == prox.uri: alive.remove(prox)
 
-def transfer_to_dead(proxy):
-    global dead
-    remove_proxy_from_either(proxy)
-    dead.append(proxy)
+def get_proxy_in_list(uri):
+    for prox in alive:
+        if uri == prox.uri: return prox
+    return None
 
 #Threads
 
@@ -90,15 +73,17 @@ def save():
     for source in sources: last_scan_times[source.LABEL] = round(source.last_check_time.timestamp())
     to_save_obj = {
         "last_scan_times": last_scan_times,
-        "saves": alive + dead
+        "saves": alive
     }
     def serialize_dt(dt):
         if type(dt) == datetime.datetime: return dt.isoformat()
         if type(dt) == Proxy: return dt.as_dict()
         return str(dt)
-    json.dump(to_save_obj, open(os.path.join("persistent", "save.json"), "w+"), default=serialize_dt)
+    save_file_path = os.path.join("persistent", "save.json")
+    with open(save_file_path + ".tmp", 'w') as tmp_save:
+        json.dump(to_save_obj, tmp_save, default=serialize_dt)
+    os.rename(save_file_path + ".tmp", save_file_path)
     ipinfo.write_out_cache()
-    print("saved proxies")
 
 def scan(source):
     global check_q
@@ -112,30 +97,28 @@ def scan(source):
             print(str(e))
         print("MAIN: Got " + str(len(res)) + " proxies from " + type(source).__name__)
         for prox in res:
-            if not proxy_in_either_list(prox): check_q.put(prox)
+            if not proxy_in_list(prox): check_q.put(prox)
         time.sleep(source.SCAN_INTERVAL*60)
 
 for src in sources:
     threading.Thread(target=scan, args=(src,)).start()
 
 def check():
-    global check_q
-    while True:
+    global check_q, THREAD_KILL_FLAG
+    while THREAD_KILL_FLAG:
         to_check = check_q.get(block=True)
-        if type(to_check) == Proxy:
-            res = checker.check(to_check.uri, timeout=(to_check.speed+2 if to_check.speed is not None else 10))
-            if res != False:
-                to_check.speed = res[0]
-                to_check.reliability = to_check.reliability + 1
-                to_check.last_check = datetime.datetime.now()
-                transfer_to_alive(to_check)
+        timeout = to_check.speed+2 if hasattr(to_check, "speed") else None
+        res = checker.check(to_check, timeout=timeout)
+        if proxy_in_list(to_check):
+            if res:
+                proxy_ref = get_proxy_in_list(to_check)
+                proxy_ref.reliability += 1
+                proxy_ref.last_check = datetime.datetime.now()
+                proxy_ref.speed = (proxy_ref.speed + res[0])/2.0
             else:
-                to_check.last_check = datetime.datetime.now()
-                to_check.reliability = to_check.reliability - 1
-                transfer_to_dead(to_check)
+                remove_proxy_from_list(to_check)
         else:
-            res = checker.check(to_check)
-            if res != False:
+            if res:
                 loc_info = ipinfo.get_info(get_ip(to_check))
                 new_proxy = Proxy(
                     uri=to_check,
@@ -149,46 +132,30 @@ def check():
                     reliability=1,
                     last_check=datetime.datetime.now()
                 )
-                # if to_check is a uri, we can assume it is not already in the proxy list, so no need to check here before appending
                 alive.append(new_proxy)
-            else:
-                dead.append(Proxy(uri=to_check, last_check=datetime.datetime.now()))
 
 def scan_lives():
-    global check_q
+    global check_q, THREAD_KILL_FLAG
     total_list_seconds = Config.get_conf_option("live_check_freq")*60
-    while True:
+    while THREAD_KILL_FLAG:
         for proxy in alive:
-            check_q.put(proxy)
+            check_q.put(proxy.uri)
             time.sleep(total_list_seconds/(len(alive)+1))
-        time.sleep(0.01)
-
-def scan_deads():
-    global check_q
-    total_list_seconds = Config.get_conf_option("dead_check_freq")*60
-    while True:
-        for proxy in dead:
-            check_q.put(proxy)
-            time.sleep(total_list_seconds/(len(dead)+1))
         time.sleep(0.01)
 
 for i in range(100):
     threading.Thread(target=check).start()
 threading.Thread(target=scan_lives).start()
-threading.Thread(target=scan_deads).start()
 
 def save_t():
-    while True:
+    while THREAD_KILL_FLAG:
         time.sleep(5*60)
         save()
 threading.Thread(target=save_t).start()
 
 #App definition
-app = FastAPI(on_shutdown=[save])
+app = FastAPI()
 app.mount("/app", StaticFiles(directory="static"), name="static")
-@app.on_event("shutdown")
-def shutdown_save():
-    save()
 
 @app.get("/proxy/")
 def return_proxy(countries: Union[List[str], None] = Query(default=None),
@@ -204,19 +171,12 @@ def return_proxy(countries: Union[List[str], None] = Query(default=None),
         if city != None and p.city != city: continue
         if speed != None and p.speed > speed: continue
         if anons != None and p.anon not in anons: continue
-        if protocs != None:
-            approved = False
-            for protoc in protocs:
-                if protoc == p.protoc:
-                    approved = True
-            if not approved: continue
+        if protocs != None and p.get_protoc_number() not in protocs: continue
         if last_check != None and (datetime.datetime.now() - p.last_check).minutes > last_check: continue
         collected_proxies.append(p)
     if len(collected_proxies) > limit:
         collected_proxies.sort(key= lambda x: x.speed)
-        for i in range(len(collected_proxies)-limit):
-            collected_proxies.pop()
-        return collected_proxies
+        return collected_proxies[0:limit]
     return collected_proxies
 
 pac_template = Template(open("static/pac_template.js", "r").read())
@@ -245,7 +205,6 @@ def return_pac(
 def get_scan_stats():
     return {
         "scan_q_len": check_q.qsize(),
-        "check_back_len": len(dead),
         "current_proxies_len": len(alive)
     }
 
@@ -253,6 +212,7 @@ def get_scan_stats():
 def force_save():
     try:
         save()
+        print("Force save successful")
         return {"success": True}
     except Exception as e:
         print("Force save request error: " + str(e))
@@ -260,6 +220,7 @@ def force_save():
 
 @app.on_event("shutdown")
 def shutdown():
+    global THREAD_KILL_FLAG
     THREAD_KILL_FLAG = False
 
 if __name__ == "__main__":
