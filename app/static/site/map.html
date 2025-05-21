@@ -256,13 +256,13 @@
                 </script>
             </div>
             <div id="scan-stats-container" style="margin-left: 2%; margin-bottom: 50%;">
-                <p id="scanner-stats">Scan Queue: 0, Check Back: 0</p>
+                <p id="scanner-stats">Scan Queue: 0</p>
             </div>
             <div id="force-save" style="margin-left: 2%; margin-bottom: 50%;">
                 <button id="save-button">Save</button>
                 <script>
                     var saveButton = document.getElementById("save-button")
-                    statsButton.onclick = function() {
+                    saveButton.onclick = function() {
                         fetch(`/force_save`, {
                             method: "POST",                            
                         }).then((response) => {
@@ -415,6 +415,7 @@
         }
 
         var scanStatsP = document.getElementById("scanner-stats")
+        var lastScanQLenNumber = 0
         setInterval(() => {
             fetch(window.location.origin + `/scan_stats/`, {
                 method: "GET",
@@ -422,7 +423,8 @@
             }).then((response) => {
                 response.json().then((stats) => {
                     scanStatsP.style.color = "white"
-                    scanStatsP.innerHTML = "Scan Q: " + stats.scan_q_len + ", Check back: " + stats.check_back_len
+                    scanStatsP.innerHTML = "Scan Q: " + stats.scan_q_len + "; " + (stats.scan_q_len < lastScanQLenNumber ? "↓": "↑") + " " + Math.abs(stats.scan_q_len - lastScanQLenNumber)
+                    lastScanQLenNumber = stats.scan_q_len
                 })
             }).catch((error) => {
                 scanStatsP.style.color = "red"
