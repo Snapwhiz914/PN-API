@@ -9,7 +9,6 @@
 import datetime
 import json
 import queue
-import threading
 import time
 from string import Template
 from typing import List, Union
@@ -23,7 +22,7 @@ from fastapi.responses import PlainTextResponse
 from fastapi.staticfiles import StaticFiles
 
 from sources import src_lists
-from utils.checker import Checker
+from app.subsystems.checker import Checker
 from utils.ipinfo import IpInfo
 from utils.config import Config
 from utils.ds import Proxy, get_ip
@@ -45,8 +44,6 @@ for proxy in json.load(open(os.path.join("persistent", "save.json")))["saves"] i
         check_q.put(proxy["uri"])
 
 #Load sources
-sources = []
-for src_class in src_lists: sources.append(src_class(usable_proxies=[]))
 
 #Helpers
 def get_now_ts() -> int:
