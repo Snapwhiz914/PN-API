@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html>
+
+<body>
+    <p>Redirecting, please wait...</p>
+    <script>
+        const fpPromise = import('https://openfpcdn.io/fingerprintjs/v4')
+            .then(FingerprintJS => FingerprintJS.load())
+
+        fpPromise
+            .then(fp => fp.get())
+            .then(result => {
+                const visitorId = result.visitorId
+                window.location.assign(window.location + "?fp=" + visitorId)
+            })
+    </script>
+</body>
+</html>

@@ -1,8 +1,16 @@
 from pydantic import BaseModel
-import datetime
+from pydantic_mongo import AbstractRepository, PydanticObjectId
+from typing import Optional
+from app.schemas.proxies import FilterProxies
 
 class Profile(BaseModel):
-    id: str
+    id: Optional[PydanticObjectId] = None
     fingerprint: str
     name: str
-    active: str
+    active: bool
+    proxies: FilterProxies
+    load_balance: bool
+
+class ProfileRepo(AbstractRepository[Profile]):
+   class Meta:
+      collection_name = 'profile'

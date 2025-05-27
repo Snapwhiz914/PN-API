@@ -37,7 +37,7 @@ function FindProxyForURL(url, host) {
     
     if (LOAD_BALENCE) {
         var proxy = PROXIES[Math.floor((Math.random() * hostsArray.length))];
-        return proxy + " DIRECT";
+        return proxy + "; DIRECT";
     }
     var pString = "";
     for (var prox of PROXIES) {

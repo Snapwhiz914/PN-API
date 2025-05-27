@@ -58,7 +58,7 @@ function startReFetch() {
 
 function updateProxies() {
   updateStatus("Fetching Proxies...", "white")
-  fetch(`/proxy/?limit=10000`, {
+  fetch(`/proxies/proxy?limit=10000`, {
     method: "GET",
     cache: 'no-cache',
   }).then((response) => {
@@ -93,11 +93,10 @@ function generatePopupString(proxy) {
   var hrs = Math.floor(proxy.lc/60).toString().padStart(2, '0')
   var mins = (proxy.lc%60).toString().padStart(2, '0')
   return proxy.uri + "<br>"
-    + proxy.city + ", " + proxy.region + ", " + proxy.country + "<br>"
-    + "Protocols: " + protocsCode[proxy.protoc] + "<br>"
+    + proxy.location.city + ", " + proxy.location.region + ", " + proxy.location.country + "<br>"
     + "Anon: " + anonCode[proxy.anon] + "<br>"
     + "Speed: " + proxy.speed.toString() + "ms<br>"
-    + "Reliability: " + proxy.reliability + "pts<br>"
+    + "Reliability: " + parseInt(proxy.reliability)*100 + "%<br>"
     + `Last Checked: (${hrs}h ${mins}m)`
 }
 
@@ -143,8 +142,8 @@ function updateMarkers() {
       default:
         icon = blackIcon
     }
-    if (prox.lat == null || prox.lon == null) continue
-    var newMarker = L.marker([prox.lat, prox.lon], {
+    if (prox.location.lat == null || prox.location.lon == null) continue
+    var newMarker = L.marker([prox.location.lat, prox.location.lon], {
       title: prox.uri,
       icon: icon
     })
@@ -199,9 +198,9 @@ function updateMap() {
   var shown = 0
   for (var prox of proxies) {
     var shouldShow = true
-    if (currentFilters.countries.length != 0 && currentFilters.countries.indexOf(prox.country) == -1) shouldShow = false
-    if (currentFilters.city != "" && prox.city.indexOf(currentFilters.city) == -1) shouldShow = false
-    if (currentFilters.region != "" && prox.region.indexOf(currentFilters.region) == -1) shouldShow = false
+    if (currentFilters.countries.length != 0 && currentFilters.countries.indexOf(prox.location.country) == -1) shouldShow = false
+    if (currentFilters.city != "" && prox.location.city.indexOf(currentFilters.city) == -1) shouldShow = false
+    if (currentFilters.region != "" && prox.location.region.indexOf(currentFilters.region) == -1) shouldShow = false
     if (currentFilters.protocs.length != 0 && !(prox.protocs.some(e => currentFilters.protocs.includes(e)))) shouldShow = false
     if (currentFilters.anons.length != 0 && !(currentFilters.anons.some(e => prox.anon == e))) shouldShow = false
     if (currentFilters.lc <= prox.lc) shouldShow = false
@@ -266,7 +265,7 @@ function cUncheckAll() {
 function updateCountryDropdown() {
   var currentCountriesCodes = []
   for (var proxy of proxies) {
-    if (currentCountriesCodes.indexOf(proxy.country) == -1) currentCountriesCodes.push(proxy.country)
+    if (currentCountriesCodes.indexOf(proxy.location.country) == -1) currentCountriesCodes.push(proxy.location.country)
   }
   
   var listedCountries = Array.from(countryDropdownContainer.getElementsByClassName("country-li"))

@@ -151,9 +151,7 @@ cython_debug/
 #  option (not recommended) you can uncomment the following to ignore the entire idea folder.
 #.idea/
 
-#Specificallty this project:
-save.json
 .DS_Store
-gc_cache.json
-config.json
-/persistent
+#Specificallty this project:
+blacklist/
+tl_sources.json

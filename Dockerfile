@@ -18,4 +18,4 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Expose the port that Uvicorn will listen on
 EXPOSE 7769
 
-CMD ["uvicorn", "main:app", "--proxy-headers", "--host", "0.0.0.0", "--port", "7769"]
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "7769"]

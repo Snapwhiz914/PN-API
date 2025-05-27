@@ -1,3 +1,3 @@
 from decouple import config
 
-MONGODB_URL = config('MONGODB_URL')
+MONGODB_URL = config('MONGODB_URI')
