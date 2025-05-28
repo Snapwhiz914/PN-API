@@ -4,6 +4,9 @@ function FindProxyForURL(url, host) {
 
     if (isPlainHostName(host) || dnsDomainIs(host, ".local") || host == "localhost") return "DIRECT;"
 
+    /* Don't proxy the PN-API server */
+    if (host == "$host") return "DIRECT;"
+
     /* Don't proxy Windows Update */
     if ((host == "download.microsoft.com") ||
         (host == "ntservicepack.microsoft.com") ||
