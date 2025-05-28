@@ -43,11 +43,12 @@ class Scanner:
 
         self.check_queue = queue.Queue()
         self.check_threads = []
-        print(f"Starting {self.settings.num_scan_threads} check threads")
+        print(f"Starting {self.settings.num_scan_threads} check threads...")
         for i in range(self.settings.num_scan_threads):
             t = threading.Thread(target=self._check)
             self.check_threads.append(t)
             t.start()
+        print(f"All threads started")
         
         self.check_back = threading.Thread(target=self._check_back_t)
         self.check_back.start()

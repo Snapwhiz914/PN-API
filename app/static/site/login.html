@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Login</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 50px;
+            background-color: #f4f4f4;
+        }
+
+        .login-container {
+            max-width: 400px;
+            margin: auto;
+            padding: 2rem;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        input[type="text"],
+        input[type="password"] {
+            width: 100%;
+            padding: 10px;
+            margin: 8px 0 16px 0;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+
+        button {
+            width: 100%;
+            padding: 10px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-size: 16px;
+        }
+
+        .error {
+            color: red;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="login-container">
+        <h2>Login</h2>
+        <form id="login-form">
+            <label for="email">Email</label>
+            <input type="text" id="email" name="username" required />
+
+            <label for="password">Password</label>
+            <input type="password" id="password" name="password" required />
+
+            <button type="submit">Login</button>
+            <div class="error" id="error-message"></div>
+        </form>
+    </div>
+
+    <script>
+        const form = document.getElementById('login-form');
+        const errorMessage = document.getElementById('error-message');
+
+        form.addEventListener('submit', async (event) => {
+            event.preventDefault();
+
+            const username = form.username.value;
+            const password = form.password.value;
+
+            const params = new URLSearchParams();
+            params.append('grant_type', 'password');
+            params.append('username', username);
+            params.append('password', password);
+
+            try {
+                errorMessage.style.color = "black"
+                errorMessage.textContent = "Trying to log in..."
+                const response = await fetch('/token', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded'
+                    },
+                    body: params
+                });
+
+                if (!response.ok) {
+                    if (response.status == 401) {
+                        throw new Error('Invalid credentials');
+                    }
+                    throw new Error('Could not connect to server');
+                }
+
+                const data = await response.json();
+                const token = data.access_token;
+
+                if (token) {
+                    localStorage.setItem('jwt', token);
+                    window.location.href = "/app/index.html"
+                } else {
+                    throw new Error('No token received');
+                }
+            } catch (error) {
+                errorMessage.style.color = "red"
+                errorMessage.textContent = error.message;
+            }
+        });
+    </script>
+</body>
+
+</html>

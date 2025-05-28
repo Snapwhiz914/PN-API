@@ -1,6 +1,6 @@
 from app.models.profile import Profile
 from app.schemas.profiles import *
-from app.db import profiles
+from app.db import profiles, users
 from fastapi import HTTPException
 from bson import ObjectId
 import re
@@ -20,17 +20,9 @@ def get_profile(id: str = None):
         raise HTTPException(status_code=404, detail="No profile found")
     return profile
 
-def create_profile(new_profile: NewProfile):
-    profile = Profile(fingerprint="", name=new_profile.name, active=False, proxies=new_profile.proxy_filter, load_balance=False)
+def create_profile(new_profile: NewProfile, email: str):
+    profile = Profile(name=new_profile.name, active=False, proxies=new_profile.proxy_filter, load_balance=False, owner=users.find_one_by({"email": email}))
     return profiles.save(profile).acknowledged
-
-def try_set_fingerprint(id: str, fingerprint: str):
-    profile = get_profile(id)
-    if profile.fingerprint != "":
-        return False
-    profile.fingerprint = fingerprint
-    profiles.save(profile)
-    return True
 
 def change_proxies(profile: Profile, new_proxies: FilterProxies):
     profile.proxies = new_proxies

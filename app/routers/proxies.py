@@ -1,14 +1,17 @@
 from fastapi import APIRouter
-from typing import List, Union
+from typing import List, Union, Annotated
 from fastapi import Query
 from app.crud.proxies import *
 from app.schemas.proxies import *
 from app.models.proxy import Anonymity
+from app.models.user import User
+from app.crud.users import get_current_user
 
 router = APIRouter()
 
 @router.get("/proxies/", tags=["proxies"])
-def read_proxies(countries: Union[List[str], None] = Query(default=None),
+def read_proxies(current_user: Annotated[User, get_current_user],
+    countries: Union[List[str], None] = Query(default=None),
     regions: Union[List[str], None] = Query(default=None),
     city: str = None,
     speed: int = None,

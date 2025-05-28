@@ -1,3 +1,5 @@
 from decouple import config
 
 MONGODB_URL = config('MONGODB_URI')
+JWT_SECRET = config('JWT_SECRET')
+ACCESS_TOKEN_EXPIRE_MINUTES = int(config('ACCESS_TOKEN_EXPIRE_MINUTES'))

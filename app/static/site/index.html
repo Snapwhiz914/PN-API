@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>PN</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+
+        .profile {
+            border: 1px solid #ccc;
+            padding: 10px;
+            margin-bottom: 10px;
+        }
+
+        .profile h3 {
+            margin: 0 0 5px 0;
+        }
+
+        label {
+            display: block;
+            margin-top: 5px;
+        }
+
+        input,
+        select,
+        textarea {
+            width: 100%;
+            padding: 5px;
+            margin-bottom: 10px;
+        }
+
+        button {
+            padding: 5px 10px;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <h1>PN</h1>
+    <div id="profileList"></div>
+
+    <h2>Create Profile</h2>
+    <form id="createProfileForm">
+        <label>Name: <input type="text" name="name" required></label>
+
+        <label>Country Codes (comma-separated): <input type="text" name="countries"></label>
+        <label>Regions (comma-separated): <input type="text" name="regions"></label>
+        <label>City: <input type="text" name="city"></label>
+        <label>Speed (in seconds): <input type="number" name="speed" step="0.1"></label>
+        <label>Anons (comma-separated integers): <input type="text" name="anons"></label>
+        <label>Protocs (comma-separated integers) (not used): <input type="text" name="protocs"></label>
+        <label>Last Check (in minutes): <input type="number" name="last_check"></label>
+        <label>Limit: <input type="number" name="limit"></label>
+
+        <button type="submit">Create Profile</button>
+    </form>
+
+    <script>
+        const token = localStorage.getItem('jwt');
+        if (token === null) {
+            window.location.href = '/app/login.html';
+        }
+
+        async function check401(response) {
+            if (response.status === 401) {
+                window.location.href = '/app/login.html';
+                throw new Error('Unauthorized');
+            }
+            return response;
+        }
+
+
+        async function fetchProfiles() {
+            const response = await fetch('/profiles/', {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+            await check401(response);
+            const profiles = await response.json();
+            displayProfiles(profiles);
+        }
+
+        function displayProfiles(profiles) {
+            const profileList = document.getElementById('profileList');
+            profileList.innerHTML = '';
+            profiles.forEach(profile => {
+                const div = document.createElement('div');
+                div.className = 'profile';
+                div.innerHTML = `
+          <h3>${profile.name}</h3>
+          <p><strong>Filter:</strong> ${JSON.stringify(profile.proxies, null, 4)}, <strong>Active:</strong> ${profile.active}, <strong>Owner:</strong> ${profile.owner.email}</p>
+          <button onclick="deleteProfile('${profile.id}')">Delete</button>
+          <button onclick="activateProfile('${profile.id}')">Activate</button>
+          <button onclick="deactivateProfile('${profile.id}')">Deactivate</button>
+        `;
+                profileList.appendChild(div);
+            });
+        }
+
+        async function deleteProfile(id) {
+            await fetch(`/profiles/${id}/delete`, { method: 'POST', headers: { 'Authorization': `Bearer ${token}`} });
+            fetchProfiles();
+        }
+
+        async function activateProfile(id) {
+            await fetch(`/profiles/${id}/activate`, { method: 'POST', headers: { 'Authorization': `Bearer ${token}`} });
+            fetchProfiles();
+        }
+
+        async function deactivateProfile(id) {
+            await fetch(`/profiles/${id}/deactivate`, { method: 'POST', headers: { 'Authorization': `Bearer ${token}`} });
+            fetchProfiles();
+        }
+
+        document.getElementById('createProfileForm').addEventListener('submit', async function (event) {
+            event.preventDefault();
+            const form = event.target;
+
+            var newProfile = {
+                name: form.name.value,
+                proxy_filter: {
+                    
+                }
+            };
+            
+            if (form.countries.value != "") newProfile.proxy_filter["countries"] = countries.value.split(',').map(s => s.trim()).filter(Boolean);
+            if (form.regions.value != "") newProfile.proxy_filter["regions"] = form.regions.value.split(',').map(s => s.trim()).filter(Boolean);
+            if (form.city.value != "") newProfile.proxy_filter["city"] = form.city.value;
+            if (form.speed.value != "") newProfile.proxy_filter["speed"] = parseFloat(form.speed.value);
+            if (form.anons.value != "") newProfile.proxy_filter["anons"] = form.anons.value.split(',').map(s => parseInt(s.trim(), 10)).filter(n => !isNaN(n));
+            if (form.protocs.value != "") newProfile.proxy_filter["protocs"] = form.protocs.value.split(',').map(s => parseInt(s.trim(), 10)).filter(n => !isNaN(n));
+            if (form.last_check.value != "") newProfile.proxy_filter["last_check"] = parseInt(form.last_check.value, 10);
+            if (form.limit.value != "") newProfile.proxy_filter["limit"] = parseInt(form.limit.value, 10);
+
+            await fetch('/profiles', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                body: JSON.stringify(newProfile)
+            });
+
+            form.reset();
+            fetchProfiles();
+        });
+
+        // Initial load
+        fetchProfiles();
+    </script>
+
+</body>
+
+</html>

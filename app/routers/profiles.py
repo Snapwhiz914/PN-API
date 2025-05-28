@@ -1,43 +1,37 @@
-from fastapi import APIRouter, Response, HTTPException, Request
+from fastapi import APIRouter, Response, HTTPException, Depends
 from fastapi.responses import HTMLResponse
-from typing import Optional
+from typing import Optional, Annotated
 from app.pac_generator import PacGenerator
-from app.schemas.profiles import NewProfile, SetFingerprint
+from app.schemas.profiles import NewProfile
 from app.schemas.proxies import FilterProxies
-from app.crud.profiles import get_profile, create_profile, try_set_fingerprint, change_proxies, set_active, get_all_profiles
+from app.crud.profiles import get_profile, create_profile, change_proxies, set_active, get_all_profiles, delete_profile
 from app.crud.proxies import get_alive_proxies
-from string import Template
-import re
+from app.crud.users import get_current_normal_user
+from app.models.user import User
+from app.models.profile import Profile
 
 router = APIRouter()
 pac_generator = PacGenerator()
 
-verify_fingerprint_html = open("app/static/profile_html/verify_fingerprint.html").read()
-profile_template = Template(open("app/static/profile_html/profile.html").read())
+def verify_access_to_profile(profile: Profile, user: User):
+    if profile is None: raise HTTPException(status_code=404, detail="No profile found")
+    if not user.admin and profile.owner.email != user.email: raise HTTPException(status_code=404, detail="No profile found")
 
 @router.get("/", tags=["profiles"])
-def read_profiles():
-    return list(get_all_profiles())
+def read_profiles(current_user: Annotated[User, Depends(get_current_normal_user)]):
+    all_profiles = list(get_all_profiles())
+    if current_user.admin: return all_profiles
+    my_profiles = []
+    for profile in all_profiles:
+        if profile.owner.email == current_user.email: my_profiles.append(profile)
+    return my_profiles
 
 @router.post("/", tags=["profiles"])
-def new_profile(new_profile: NewProfile):
-    if create_profile(new_profile):
+def new_profile(new_profile: NewProfile, current_user: Annotated[User, Depends(get_current_normal_user)]):
+    if create_profile(new_profile, email=current_user.email):
         return {"status": "success"}
     else:
         raise HTTPException(status_code=500, detail="Creation was unsuccessful")
-
-@router.get("/{id}", tags=["profiles"], response_class=HTMLResponse)
-def read_profile(id: str, fp: Optional[str] = None):
-    profile = get_profile(id)
-    if profile is not None:
-        if profile.fingerprint == "":
-            return profile_template.substitute({"profile_name": profile.name, "active": profile.active})
-        else:
-            #if fingerprint is set
-            if fp is None: return verify_fingerprint_html
-            if fp is not None and fp == profile.fingerprint: return profile_template.substitute({"profile_name": profile.name, "active": profile.active})
-            else: raise HTTPException(status_code=403, detail="Invalid fingerprint")
-    raise HTTPException(status_code=404, detail="No profile found")
     
 @router.get("/{id}/pac", tags=["profiles"])
 def return_pac(id: str):
@@ -49,46 +43,36 @@ def return_pac(id: str):
         content = pac_generator.generate_blank_pac()
     return Response(content=content, media_type="application/x-ns-proxy-autoconfig")
 
-@router.post("/{id}/set_fingerprint", tags=["profiles"])
-def set_profile_fingerprint(id: str, fingerprint: SetFingerprint):
-    if try_set_fingerprint(id, fingerprint.fingerprint):
-        return {"status": "success"}
-    else:
-        return {"status": "fingerprint already set"}
-
 @router.post("/{id}/change_filter", tags=["profiles"])
-def set_profile_fingerprint(id: str, new_filter: FilterProxies, fp: str):
+def change_filter(id: str, new_filter: FilterProxies, current_user: Annotated[User, Depends(get_current_normal_user)]):
     profile = get_profile(id)
-    if profile is None: raise HTTPException(status_code=404, detail="No profile found")
-    if fp != profile.fingerprint: raise HTTPException(status_code=403, detail="Invalid fingerprint")
+    verify_access_to_profile(profile, current_user)
     if change_proxies(profile, new_filter):
         return {"status": "success"}
     else:
         return {"status": "unsuccessful change"}
 
 @router.post("/{id}/activate", tags=["profiles"])
-def activate_profile(id: str, fp: str):
+def activate_profile(id: str, current_user: Annotated[User, Depends(get_current_normal_user)]):
     profile = get_profile(id)
-    if profile is None: raise HTTPException(status_code=404, detail="No profile found")
-    if fp != profile.fingerprint:
-        raise HTTPException(status_code=403, detail="Invalid fingerprint")
+    verify_access_to_profile(profile, current_user)
     if set_active(profile, True):
         return {"status": "success"}
     else:
         return {"status": "could not activate"}
 
 @router.post("/{id}/deactivate", tags=["profiles"])
-def deactivate_profile(id: str, fp: str):
+def deactivate_profile(id: str, current_user: Annotated[User, Depends(get_current_normal_user)]):
     profile = get_profile(id)
-    if profile is None: raise HTTPException(status_code=404, detail="No profile found")
-    if fp != profile.fingerprint: raise HTTPException(status_code=403, detail="Invalid fingerprint")
+    verify_access_to_profile(profile, current_user)
     if set_active(profile, False):
         return {"status": "success"}
     else:
         return {"status": "could not deactivate"}
 
 @router.post("/{id}/delete", tags=["profiles"])
-def delete_profile(id: str):
+def delete_profile_request(id: str, current_user: Annotated[User, Depends(get_current_normal_user)]):
+    verify_access_to_profile(get_profile(id), current_user)
     if delete_profile(id):
         return {"status": "success"}
     else:
