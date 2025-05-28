@@ -235,10 +235,6 @@
                 <label for="refresh-cb">Pause Refresh: </label>
                 <input type="checkbox" id="refresh-cb" />
             </div>
-            <div id="pac-container" style="margin-left: 2%; margin-top: 0.5%">
-                <label for="pac-url-tb"><button id="pac-button">Generate PAC: </button></label>
-                <input type="text" style="width: 250px;" onfocus="this.select();" onmouseup="return false;" value="" id="pac-url-tb"/>
-            </div>
             <div id="stats-container" style="margin-left: 2%; margin-top: 0.5%">
                 <button id="stats-button">Stats</button>
                 <div id="stats-popup">
@@ -409,7 +405,7 @@
                 }
                 response.json().then((stats) => {
                     scanStatsP.style.color = "white"
-                    scanStatsP.innerHTML = "Check Q: " + stats.check_queue_size + "; " + (stats.scan_q_len < lastScanQLenNumber ? "↓": "↑") + " " + Math.abs(stats.scan_q_len - lastScanQLenNumber)
+                    scanStatsP.innerHTML = "Check Q: " + stats.check_queue_size + "; " + (stats.check_queue_size < lastScanQLenNumber ? "↓": "↑") + " " + Math.abs(stats.scan_q_len - lastScanQLenNumber)
                     scanStatsP.innerHTML = scanStatsP.innerHTML.concat("; Blacklisted: " + stats.blacklisted_ips + "/" + stats.non_blacklisted_ips + " (" + stats.blacklisted_ips/stats.non_blacklisted_ips + "%)")
                     lastScanQLenNumber = stats.check_queue_size
                 })

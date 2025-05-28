@@ -97,7 +97,7 @@ function generatePopupString(proxy) {
     + proxy.location.city + ", " + proxy.location.region + ", " + proxy.location.country + "<br>"
     + "Anon: " + anonCode[proxy.anon] + "<br>"
     + "Speed: " + proxy.speed.toString() + "ms<br>"
-    + "Reliability: " + parseInt(proxy.reliability)*100 + "%<br>"
+    + "Reliability: " + parseFloat(proxy.reliability)*100 + "%<br>"
     + `Last Checked: (${hrs}h ${mins}m)`
 }
 

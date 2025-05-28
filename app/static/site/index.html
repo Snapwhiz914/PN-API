@@ -97,6 +97,7 @@
                 div.innerHTML = `
           <h3>${profile.name}</h3>
           <p><strong>Filter:</strong> ${JSON.stringify(profile.proxies, null, 4)}, <strong>Active:</strong> ${profile.active}, <strong>Owner:</strong> ${profile.owner.email}</p>
+          <br><p>URL: ${window.location.origin + "/profiles/" + profile.id + "/pac"}
           <button onclick="deleteProfile('${profile.id}')">Delete</button>
           <button onclick="activateProfile('${profile.id}')">Activate</button>
           <button onclick="deactivateProfile('${profile.id}')">Deactivate</button>
