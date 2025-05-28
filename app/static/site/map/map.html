@@ -62,6 +62,7 @@
         </style>
     </head>
     <body>
+        <a href="/app/index.html">Home</a>
         <div id="filters">
             <div id="country-filter" style="margin-left: 3%;">
                 <div id="country-list" class="dropdown-check-list" tabindex="100" style="background-color: #4f4f4e;">
@@ -401,7 +402,11 @@
             fetch("/scanner/statistics", {
                 method: "GET",
                 cache: 'no-cache',
+                headers: { 'Authorization': `Bearer ${localStorage.getItem('jwt')}` }
             }).then((response) => {
+                if (response.status === 401) {
+                    window.location.href = '/app/login.html';
+                }
                 response.json().then((stats) => {
                     scanStatsP.style.color = "white"
                     scanStatsP.innerHTML = "Check Q: " + stats.check_queue_size + "; " + (stats.scan_q_len < lastScanQLenNumber ? "↓": "↑") + " " + Math.abs(stats.scan_q_len - lastScanQLenNumber)

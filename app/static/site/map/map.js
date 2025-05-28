@@ -61,6 +61,7 @@ function updateProxies() {
   fetch(`/proxies/?limit=10000`, {
     method: "GET",
     cache: 'no-cache',
+    headers: { 'Authorization': `Bearer ${localStorage.getItem('jwt')}` }
   }).then((response) => {
     console.log("Got response")
     if (response.status != 200) {
