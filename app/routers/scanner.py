@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Security
+from fastapi import APIRouter, Security, Depends
 from app.models.scanner import ScannerSettings
 from app.schemas.scanner import ScanningStatistics, ScannerSettingsUpdate
 from app.crud.scanner import get_settings, update_settings, get_stats
@@ -18,5 +18,5 @@ def change_settings(update: ScannerSettings, current_user: Annotated[User, Secur
     return {"status": "success"}
 
 @router.get("/statistics/", tags=["settings"])
-def get_statistics(current_user: Annotated[User, get_current_user]):
+def get_statistics(current_user: Annotated[User, Depends(get_current_user)]):
     return get_stats()
