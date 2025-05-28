@@ -58,7 +58,7 @@ function startReFetch() {
 
 function updateProxies() {
   updateStatus("Fetching Proxies...", "white")
-  fetch(`/proxies/proxy?limit=10000`, {
+  fetch(`/proxies/?limit=10000`, {
     method: "GET",
     cache: 'no-cache',
   }).then((response) => {

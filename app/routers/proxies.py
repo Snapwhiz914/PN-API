@@ -9,7 +9,7 @@ from app.crud.users import get_current_user
 
 router = APIRouter()
 
-@router.get("/proxies/", tags=["proxies"])
+@router.get("/", tags=["proxies"])
 def read_proxies(current_user: Annotated[User, get_current_user],
     countries: Union[List[str], None] = Query(default=None),
     regions: Union[List[str], None] = Query(default=None),
