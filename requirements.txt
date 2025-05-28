@@ -13,3 +13,5 @@ SocksiPy_branch==1.01
 urllib3==1.26.12
 uvicorn==0.34.2
 PySocks==1.7.1
+email_validator==2.2.0
+python-multipart==0.0.20
