@@ -38,24 +38,45 @@
             margin-top: 10px;
         }
     </style>
+    <link rel="stylesheet" href="main.css">
 </head>
 
 <body>
 
     <h1>PN</h1>
-    <a href="/app/map/map.html">Map</a>
+    <p id="emailDisplay"></p>
+    <p id="linkBar"><a href="/app/map/map.html">Map</a></p>
+    <h2>Current Profiles</h2>
     <div id="profileList"></div>
 
     <h2>Create Profile</h2>
     <form id="createProfileForm">
         <label>Name: <input type="text" name="name" required></label>
 
-        <label>Country Codes (comma-separated): <input type="text" name="countries"></label>
-        <label>Regions (comma-separated): <input type="text" name="regions"></label>
-        <label>City: <input type="text" name="city"></label>
+        <label>Country Codes:<details>
+                <form>
+                    <fieldset>
+                        <legend>Countries</legend>
+                        <ul>
+                        </ul>
+                    </fieldset>
+                </form>
+            </details></label>
+        <label>Regions: <details>
+                <form>
+                    <fieldset>
+                        <legend>Regions</legend>
+                        <ul>
+                        </ul>
+                    </fieldset>
+                </form>
+            </details></label>
+        <label>City: <select name="city" id="city">
+            </select></label>
         <label>Speed (in seconds): <input type="number" name="speed" step="0.1"></label>
         <label>Anons (comma-separated integers): <input type="text" name="anons"></label>
         <label>Protocs (comma-separated integers) (not used): <input type="text" name="protocs"></label>
+        <label>Reliability (decimal): <input type="number" name="reliability" step="0.05"></label>
         <label>Last Check (in minutes): <input type="number" name="last_check"></label>
         <label>Limit: <input type="number" name="limit"></label>
 
@@ -88,8 +109,44 @@
             displayProfiles(profiles);
         }
 
+        async function getUserInfo() {
+            const request = await fetch(`/users/me`, { method: 'GET', headers: { 'Authorization': `Bearer ${token}` } });
+            const info = await request.json();
+            if (info.admin) {
+                document.getElementById("emailDisplay").innerText = "<b>Administrator</b> " + info.email
+                document.getElementById("linkBar").innerText = document.getElementById("linkBar").innerText.concat(' <a href="/app/users.html">Users</a> <a href="/app/scanner.html">Scanner</a>')
+            }
+            else {
+                document.getElementById("emailDisplay").innerText = "Hello " + info.email
+            }
+        }
+
+        async function fillDropdowns() {
+            const request = await fetch(`/proxies/location_filter_values`, { method: 'GET', headers: { 'Authorization': `Bearer ${token}` } });
+            const filterValues = await request.json();
+            filterValues[0].forEach(code => {
+                const li = document.createElement('li');
+                li.className = "countrySelector"
+                li.innerHTML = `<label for="${code}">${code}<input type="checkbox" id="${code}" name="${code}" value="${code}"></label>`
+            });
+            filterValues[1].forEach(region => {
+                const li = document.createElement('li');
+                li.className = "regionSelector"
+                li.innerHTML = `<label for="${region}">${region}<input type="checkbox" id="${region}" name="${region}" value="${region}"></label>`
+            });
+            filterValues[2].forEach(city => {
+                const option = document.createElement('option');
+                option.innerText = city
+                option.setAttribute("value", city)
+            });
+        }
+
         function displayProfiles(profiles) {
             const profileList = document.getElementById('profileList');
+            if (profiles.length == 0) {
+                profileList.innerHTML = 'No existing profiles on your account.';
+                return
+            }
             profileList.innerHTML = '';
             profiles.forEach(profile => {
                 const div = document.createElement('div');
@@ -107,17 +164,17 @@
         }
 
         async function deleteProfile(id) {
-            await fetch(`/profiles/${id}/delete`, { method: 'POST', headers: { 'Authorization': `Bearer ${token}`} });
+            await fetch(`/profiles/${id}/delete`, { method: 'POST', headers: { 'Authorization': `Bearer ${token}` } });
             fetchProfiles();
         }
 
         async function activateProfile(id) {
-            await fetch(`/profiles/${id}/activate`, { method: 'POST', headers: { 'Authorization': `Bearer ${token}`} });
+            await fetch(`/profiles/${id}/activate`, { method: 'POST', headers: { 'Authorization': `Bearer ${token}` } });
             fetchProfiles();
         }
 
         async function deactivateProfile(id) {
-            await fetch(`/profiles/${id}/deactivate`, { method: 'POST', headers: { 'Authorization': `Bearer ${token}`} });
+            await fetch(`/profiles/${id}/deactivate`, { method: 'POST', headers: { 'Authorization': `Bearer ${token}` } });
             fetchProfiles();
         }
 
@@ -128,16 +185,29 @@
             var newProfile = {
                 name: form.name.value,
                 proxy_filter: {
-                    
+
                 }
             };
+
+            var countriesSelected = []
+            for (let listItem of document.getElementsByClassName("countrySelector")) {
+                var checkbox = listItem.getElementsByTagName("input").item(0);
+                if (checkbox.checked) countriesSelected.push(checkbox.getAttribute("value"))
+            }
+            if (countriesSelected.length > 0) newProfile.proxy_filter["countries"] = countries;
             
-            if (form.countries.value != "") newProfile.proxy_filter["countries"] = countries.value.split(',').map(s => s.trim()).filter(Boolean);
-            if (form.regions.value != "") newProfile.proxy_filter["regions"] = form.regions.value.split(',').map(s => s.trim()).filter(Boolean);
+            var regionsSelected = []
+            for (let listItem of document.getElementsByClassName("regionSelector")) {
+                var checkbox = listItem.getElementsByTagName("input").item(0);
+                if (checkbox.checked) regionsSelected.push(checkbox.getAttribute("value"))
+            }
+            if (regionsSelected.length > 0) newProfile.proxy_filter["countries"] = countries;
+
             if (form.city.value != "") newProfile.proxy_filter["city"] = form.city.value;
             if (form.speed.value != "") newProfile.proxy_filter["speed"] = parseFloat(form.speed.value);
             if (form.anons.value != "") newProfile.proxy_filter["anons"] = form.anons.value.split(',').map(s => parseInt(s.trim(), 10)).filter(n => !isNaN(n));
             if (form.protocs.value != "") newProfile.proxy_filter["protocs"] = form.protocs.value.split(',').map(s => parseInt(s.trim(), 10)).filter(n => !isNaN(n));
+            if (form.reliability.value != "") newProfile.proxy_filter["reliability"] = parseFloat(form.reliability.value);
             if (form.last_check.value != "") newProfile.proxy_filter["last_check"] = parseInt(form.last_check.value, 10);
             if (form.limit.value != "") newProfile.proxy_filter["limit"] = parseInt(form.limit.value, 10);
 
@@ -153,6 +223,7 @@
 
         // Initial load
         fetchProfiles();
+        fillDropdowns();
     </script>
 
 </body>

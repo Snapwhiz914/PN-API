@@ -21,6 +21,10 @@ def create_user(new_user: NewUser, current_user: Annotated[User, Security(get_cu
     else:
         raise HTTPException(status_code=500, detail="Creation was unsuccessful")
 
+@router.get("/me", tags=["users"])
+def get_me(current_user: Annotated[User, Security(get_current_user)]):
+    return current_user
+
 @router.post("/delete", tags=["users"])
 def delete_user(email: EmailStr, current_user: Annotated[User, Security(get_current_user, scopes=["admin"])]):
     if delete_user(email):

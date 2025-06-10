@@ -21,3 +21,7 @@ def read_proxies(current_user: Annotated[User, Depends(get_current_user)],
     last_check: int = None,
     limit: int = 20):
     return get_alive_proxies(FilterProxies(countries=countries, regions=regions, city=city, speed=speed, reliability=reliability, anons=anons, protocs=protocs, last_check=last_check, limit=limit))
+
+@router.get("/location_filter_values", tags=["proxies"])
+def get_available_filter_values(current_user: Annotated[User, Depends(get_current_user)]):
+    return get_filter_values()

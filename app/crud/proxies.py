@@ -18,3 +18,13 @@ def get_alive_proxies(filter: FilterProxies) -> List[Proxy]:
     search["last_check_status"] = True
     collected_proxies = list(proxies.find_by(search, limit=filter.limit, sort=[("speed", 1)]))
     return collected_proxies
+
+def get_filter_values() -> tuple[List[str]]:
+    """
+    tuple order: countries, cities, regions
+    """
+    return (
+        proxies.get_collection().distinct("location.country"),
+        proxies.get_collection().distinct("location.city"),
+        proxies.get_collection().distinct("location.region")
+    )
