@@ -10,7 +10,7 @@ pymongo==4.13.0
 python-decouple==3.8
 Requests==2.32.3
 SocksiPy_branch==1.01
-urllib3==1.26.12
+urllib3==2.5.0
 uvicorn==0.34.2
 PySocks==1.7.1
 email_validator==2.2.0
