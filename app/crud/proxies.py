@@ -15,6 +15,9 @@ def get_alive_proxies(filter: FilterProxies) -> List[Proxy]:
     if filter.last_check != None:
         past_dt = datetime.datetime.now() - datetime.timedelta(minutes=filter.last_check)
         search["last_check"] = {"$gte": past_dt}
+    if filter.accessible_websites != None:
+        # Filter proxies that have all the specified websites in their accessible_websites list
+        search["accessible_websites"] = {"$all": filter.accessible_websites}
     search["last_check_status"] = True
     collected_proxies = list(proxies.find_by(search, limit=filter.limit, sort=[("speed", 1)]))
     return collected_proxies

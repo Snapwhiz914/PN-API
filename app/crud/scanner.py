@@ -9,7 +9,7 @@ def get_settings():
 
 def update_settings(update: ScannerSettingsUpdate):
     setngs = get_settings()
-    for k, v in update.model_dump(exclude_none=True):
+    for k, v in update.model_dump(exclude_none=True).items():
         setattr(setngs, k, v)
     settings.save(setngs)
 

@@ -11,4 +11,5 @@ class FilterProxies(BaseModel):
     anons: Optional[List[Anonymity]] = None
     protocs: Optional[List[int]] = None
     last_check: Optional[int] = None
+    accessible_websites: Optional[List[str]] = None  # Filter by proxies that can access these websites
     limit: int = 20

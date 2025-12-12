@@ -28,24 +28,21 @@ class Checker:
             return Anonymity.medium
         return Anonymity.high
     
-    def _check_popular(self, addr: str, timeout: int):
+    def _check_website(self, addr: str, url: str, timeout: int):
+        """
+        Check if a proxy can access a specific website.
+        Returns the response time if successful, False if failed.
+        """
         try:
-            res1 = requests.get("https://google.com", proxies={
-                "https": addr
-            }, timeout=timeout)
-            res2 = requests.get("https://reddit.com", proxies={
-                "https": addr
-            }, timeout=timeout)
-            return (res1.elapsed.total_seconds() + res2.elapsed.total_seconds())/2
+            res = requests.get(url, proxies={"http": addr, "https": addr}, timeout=timeout)
+            return res.elapsed.total_seconds()
         except (requests.exceptions.ProxyError, requests.exceptions.Timeout, requests.exceptions.ConnectionError,
             requests.exceptions.JSONDecodeError, urllib3.exceptions.MaxRetryError, urllib3.exceptions.ProxyError,
             urllib3.exceptions.ProtocolError, urllib3.exceptions.NewConnectionError, socks.ProxyError) as e:
-            self._log_dead_check(addr, "In popular check: " + type(e).__name__)
             return False
         except Exception as e:
-            print("Unknown error occurred while popular checking " + addr + ":")
+            print("Unknown error occurred while checking " + addr + ":")
             traceback.print_exc()
-            self._log_dead_check(addr, "In popular check: unknown")
             return False
     
     def get_reliability_for(self, uri):
@@ -61,22 +58,69 @@ class Checker:
     def _log_dead_check(self, addr, error_type):
         historical_checks.save(HistoricalPing(uri=addr, raw_headers="", speed=0, ping_time=datetime.datetime.now(), error_type=error_type))
 
-    def check(self, addr: str, timeout=10):
+    def check(self, addr: str, websites_config, timeout=10):
         """
-        Given a proxy URI string, return a tuple of properties if alive: speed, anonymity level, if dead just return False
+        Given a proxy URI string and a list of website configurations, validate the proxy.
+        Returns a tuple: (speed, anonymity level, accessible_websites, inaccessible_websites)
+        If proxy is dead (all critical websites fail), returns False
+        
+        Args:
+            addr: Proxy URI string
+            websites_config: List of WebsiteConfig objects from ScannerSettings
+            timeout: Default timeout (used if website doesn't specify one)
         """
         try:
-            res = requests.get("https://httpbin.org/anything", proxies={
-                "https": addr
-            }, timeout=timeout)
-            if res.content != None:
-                anon = self._get_anon_from_res(res.json())
-                other_checks_result = self._check_popular(addr, res.elapsed.total_seconds())
-                if other_checks_result == False:
-                    return False
-                speed = (res.elapsed.total_seconds()+other_checks_result)/2
-                historical_checks.save(HistoricalPing(uri=addr, raw_headers='\n'.join(f"{key}: {value}" for key, value in res.headers.items()), speed=speed, ping_time=datetime.datetime.now(), error_type=""))
-                return (speed, anon)
+            # Primary check: httpbin.org (mandatory)
+            primary_url = "https://httpbin.org/anything"
+            primary_timeout = timeout
+            res = requests.get(primary_url, proxies={"https": addr}, timeout=primary_timeout)
+            
+            if res.content == None:
+                return False
+            
+            anon = self._get_anon_from_res(res.json())
+            primary_speed = res.elapsed.total_seconds()
+            
+            # Check all configured websites
+            accessible_websites = []
+            inaccessible_websites = []
+            has_critical_failure = False
+            total_speeds = [primary_speed]
+            
+            for website_config in websites_config:
+                website_timeout = website_config.timeout_seconds
+                website_url = website_config.url
+                
+                check_result = self._check_website(addr, website_url, website_timeout)
+                
+                if check_result != False:
+                    accessible_websites.append(website_url)
+                    total_speeds.append(check_result)
+                else:
+                    inaccessible_websites.append(website_url)
+                    if website_config.mark_dead_on_fail:
+                        has_critical_failure = True
+                        break  # No need to check further if proxy will be marked as dead
+            
+            # If any critical (mark_dead_on_fail=True) website failed, mark proxy as dead
+            if has_critical_failure:
+                self._log_dead_check(addr, "Critical website check failed")
+                return False
+            
+            # Calculate average speed
+            speed = sum(total_speeds) / len(total_speeds)
+            
+            # Log successful check
+            historical_checks.save(HistoricalPing(
+                uri=addr,
+                raw_headers='\n'.join(f"{key}: {value}" for key, value in requests.get(primary_url, proxies={"https": addr}, timeout=primary_timeout).headers.items()),
+                speed=speed,
+                ping_time=datetime.datetime.now(),
+                error_type=""
+            ))
+            
+            return (speed, anon, accessible_websites, inaccessible_websites)
+            
         except (requests.exceptions.ProxyError, requests.exceptions.Timeout, requests.exceptions.ConnectionError,
             requests.exceptions.JSONDecodeError, urllib3.exceptions.MaxRetryError, urllib3.exceptions.ProxyError,
             urllib3.exceptions.ProtocolError, urllib3.exceptions.NewConnectionError, socks.ProxyError) as e:

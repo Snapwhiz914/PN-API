@@ -101,21 +101,23 @@ class Scanner:
                 continue
             self.statistics.non_blacklisted_ips += 1
 
-            res = self.checker.check(uri, timeout=self.settings.scan_check_timeout_seconds)
+            res = self.checker.check(uri, websites_config=self.settings.websites, timeout=self.settings.scan_check_timeout_seconds)
             proxy = proxies.find_one_by({"uri": uri})
             now = datetime.datetime.now()
             rel = self.checker.get_reliability_for(uri)
             if res != False:
-                speed, anon = res
+                speed, anon, accessible_websites, inaccessible_websites = res
                 if proxy == None:
                     location = self.ipinfo.get_info(uri.split(':')[1][2:])
-                    proxies.save(Proxy(uri=uri, speed=speed, anon=anon, reliability=1, last_check=now, last_check_status=True, location=location))
+                    proxies.save(Proxy(uri=uri, speed=speed, anon=anon, reliability=1, last_check=now, last_check_status=True, location=location, accessible_websites=accessible_websites, inaccessible_websites=inaccessible_websites))
                 else:
                     proxy.speed = speed
                     proxy.anon = anon
                     proxy.reliability = rel
                     proxy.last_check = now
                     proxy.last_check_status = True
+                    proxy.accessible_websites = accessible_websites
+                    proxy.inaccessible_websites = inaccessible_websites
                     proxies.save(proxy)
             else:
                 if proxy != None:
