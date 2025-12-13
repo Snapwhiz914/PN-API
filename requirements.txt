@@ -15,3 +15,10 @@ uvicorn==0.34.2
 PySocks==1.7.1
 email_validator==2.2.0
 python-multipart==0.0.20
+
+# Testing dependencies
+pytest==7.4.4
+pytest-asyncio==0.23.3
+pytest-cov==4.1.0
+mongomock==4.1.2
+httpx==0.26.0

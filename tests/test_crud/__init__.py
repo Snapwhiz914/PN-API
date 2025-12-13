@@ -1,0 +1,1 @@
+"""CRUD operation tests"""

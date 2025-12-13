@@ -1,3 +1,4 @@
+import os
 import pymongo
 import pymongo.errors
 from app.settings import MONGODB_URL, JWT_SECRET
@@ -28,13 +29,15 @@ proxies = ProxyRepo(database)
 settings = ScannerSettingsRepo(database)
 users = UserRepo(database)
 
-if settings.find_one_by({}) == None:
-    settings.save(ScannerSettings())
+# Only run initialization in non-test mode
+if not os.getenv('PYTEST_CURRENT_TEST'):
+    if settings.find_one_by({}) == None:
+        settings.save(ScannerSettings())
 
-admin = users.find_one_by({"admin": True})
-if admin == None:
-    print("NO ADMIN USER IS SET!")
-    pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-    email = input("Admin email: ")
-    password = getpass.getpass()
-    users.save(User(email=email, password=pwd_context.hash(password), admin=True))
+    admin = users.find_one_by({"admin": True})
+    if admin == None:
+        print("NO ADMIN USER IS SET!")
+        pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+        email = input("Admin email: ")
+        password = getpass.getpass()
+        users.save(User(email=email, password=pwd_context.hash(password), admin=True))

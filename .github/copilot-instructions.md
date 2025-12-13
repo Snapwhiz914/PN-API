@@ -1,5 +1,7 @@
 # PN-API Copilot Instructions
 
+# AI AGENTS PLEASE READ: Do not create detailed guides or markdown documentation for features. Implementation code and inline comments should be self-documenting. Keep instructions concise and code-focused.
+
 ## High-Level Architecture
 
 **FastAPI + MongoDB proxy scanner and PAC generator.**
@@ -47,10 +49,10 @@ docker run -p 7769:7769 -e MONGODB_URI=<uri> -e JWT_SECRET=<secret> pn-api
 
 - **Auth**: All endpoints except `/token` (POST) require JWT token in Authorization header. Validate with `get_current_user()`.
 - **Filtering proxies**: Query params (countries, regions, city, speed, anons, protocs, last_check, limit) are wrapped in `FilterProxies` schema before passing to CRUD.
+- **Proxy anonymity levels**: When using proxy anonymity in tests or code, reference the `Anonymity` enum in `app/models/proxy.py`: `none=0`, `low=1`, `medium=2`, `high=3`. Do NOT use string values like "elite" or "anonymous".
 - **Scanner design**: Sources run on separate threads; they feed URIs into `check_queue`. Checker threads validate and compute location (ipinfo.py first, fallback geopy). Blacklist (`blacklist.py`) filters known-bad IPs.
 - **PAC protocol mapping**: proxy.uri protocol prefix = PAC protocol number: http=0, https=1, socks4=2, socks5=3.
 - **Keep startup light**: Heavy work (Scanner init) happens in `main.py` but is managed by FastAPI lifespan context. Don't block app start.
-- **Documentation**: Do not create detailed guides or markdown documentation for features. Implementation code and inline comments should be self-documenting. Keep instructions concise and code-focused.
 
 ## Integration Points & External Dependencies
 
