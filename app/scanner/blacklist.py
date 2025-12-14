@@ -158,9 +158,3 @@ class Blacklist:
         while self.downloading:
             time.sleep(0.001)
         self._download()
-
-if __name__ == '__main__':
-    b = Blacklist()
-    print(b.is_blacklisted(uri="socks4://36.116.0.10:6969"))
-    b.update_thread_kill = True
-    b.update_thread.join()

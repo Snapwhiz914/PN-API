@@ -131,7 +131,3 @@ class Checker:
             traceback.print_exc()
             self._log_dead_check(addr, "unknown")
             return False
-        
-if __name__ == '__main__':
-    c = Checker()
-    print(c.check("socks5://5.9.98.142:3080"))
