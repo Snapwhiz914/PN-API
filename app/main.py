@@ -20,12 +20,12 @@ async def lifespan(app: FastAPI):
     Scanner.get_instance().teardown()
 
 app = FastAPI(lifespan=lifespan)
-app.mount("/app", StaticFiles(directory="app/static/site"), name="static")
-app.include_router(proxies_router, prefix="/proxies")
-app.include_router(profiles_router, prefix="/profiles")
-app.include_router(scanner_router, prefix="/scanner")
-app.include_router(users_router, prefix="/users")
-@app.post("/token")
+app.mount("/", StaticFiles(directory="frontend"), name="frontend")
+app.include_router(proxies_router, prefix="/api/proxies")
+app.include_router(profiles_router, prefix="/api/profiles")
+app.include_router(scanner_router, prefix="/api/scanner")
+app.include_router(users_router, prefix="/api/users")
+@app.post("/api/token")
 def get_token(form_data: Annotated[OAuth2PasswordRequestForm, Depends()]) -> Token:
     return login_for_access_token(form_data)
 
