@@ -56,8 +56,8 @@ export function FilterModal({
       countries: countries.trim() ? countries.split(',').map(c => c.trim()) : undefined,
       regions: regions.trim() ? regions.split(',').map(r => r.trim()) : undefined,
       city: city.trim() || undefined,
-      speed: speed ? Number(speed) : undefined,
-      reliability: reliability ? Number(reliability) : undefined,
+      speed: speed ? Number(speed)/1000 : undefined,
+      reliability: reliability ? Number(reliability)/100 : undefined,
       anons: anons.length ? anons.map(Number) : undefined,
       protocs: protocs.length ? protocs.map(Number) : undefined,
       last_check: lastCheck ? Number(lastCheck) : undefined,
@@ -93,8 +93,8 @@ export function FilterModal({
         />
 
         <NumberInput
-          label="Min Speed (bps)"
-          placeholder="Enter minimum speed"
+          label="max load time (ms)"
+          placeholder="1000"
           value={speed}
           onChange={setSpeed}
           min={0}
@@ -102,7 +102,7 @@ export function FilterModal({
 
         <NumberInput
           label="Min Reliability (%)"
-          placeholder="Enter minimum reliability"
+          placeholder="50"
           value={reliability}
           onChange={setReliability}
           min={0}

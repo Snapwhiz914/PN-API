@@ -31,7 +31,7 @@ def new_profile(new_profile: NewProfile, current_user: Annotated[User, Depends(g
     if create_profile(new_profile, email=current_user.email):
         return {"status": "success"}
     else:
-        raise HTTPException(status_code=500, detail="Creation was unsuccessful")
+        raise HTTPException(status_code=500, detail="Creation unsuccessful due to database error")
     
 @router.get("/{id}/pac", tags=["profiles"])
 def return_pac(id: str):
@@ -50,7 +50,7 @@ def change_filter(id: str, new_filter: FilterProxies, current_user: Annotated[Us
     if change_proxies(profile, new_filter):
         return {"status": "success"}
     else:
-        return {"status": "unsuccessful change"}
+        raise HTTPException(status_code=500, detail="Change unsuccessful due to database error")
 
 @router.post("/{id}/activate", tags=["profiles"])
 def activate_profile(id: str, current_user: Annotated[User, Depends(get_current_normal_user)]):
@@ -76,4 +76,4 @@ def delete_profile_request(id: str, current_user: Annotated[User, Depends(get_cu
     if delete_profile(id):
         return {"status": "success"}
     else:
-        return {"status": "unsuccessful delete"}
+        raise HTTPException(status_code=500, detail="Deletion unsuccessful due to database error")

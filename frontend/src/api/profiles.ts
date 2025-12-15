@@ -1,3 +1,5 @@
+import { User, getAuthHeader } from '../api/user'
+
 export interface Anonymity {
   value: number
   label: string
@@ -26,18 +28,13 @@ export interface FilterProxies {
 export interface Profile {
   id: string
   name: string
-  owner_email: string
-  filter: FilterProxies
+  owner: User
+  proxies: FilterProxies
   pac_url?: string
   active: boolean
-  created_at: string
 }
 
 const API_BASE = '/api'
-
-const getAuthHeader = () => ({
-  Authorization: `Bearer ${sessionStorage.getItem('access_token')}`,
-})
 
 export async function getProfiles(): Promise<Profile[]> {
   const response = await fetch(`${API_BASE}/profiles`, {
@@ -61,7 +58,7 @@ export async function createProfile(
       ...getAuthHeader(),
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({ name, filter }),
+    body: JSON.stringify({ name: name, proxy_filter: filter }),
   })
 
   if (!response.ok) {
@@ -76,13 +73,13 @@ export async function updateProfile(
   profileId: string,
   updates: Partial<Profile>
 ): Promise<Profile> {
-  const response = await fetch(`${API_BASE}/profiles/${profileId}`, {
-    method: 'PUT',
+  const response = await fetch(`${API_BASE}/profiles/${profileId}/change_filter`, {
+    method: 'POST',
     headers: {
       ...getAuthHeader(),
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify(updates),
+    body: JSON.stringify({ new_filter: updates.proxies }),
   })
 
   if (!response.ok) {
@@ -90,12 +87,18 @@ export async function updateProfile(
     throw new Error(error.detail || 'Failed to update profile')
   }
 
-  return response.json()
+  // Fetch and return the updated profile
+  const allProfiles = await getProfiles()
+  const updatedProfile = allProfiles.find((p) => p.id === profileId)
+  if (!updatedProfile) {
+    throw new Error('Profile not found after update')
+  }
+  return updatedProfile
 }
 
 export async function deleteProfile(profileId: string): Promise<void> {
-  const response = await fetch(`${API_BASE}/profiles/${profileId}`, {
-    method: 'DELETE',
+  const response = await fetch(`${API_BASE}/profiles/${profileId}/delete`, {
+    method: 'POST',
     headers: getAuthHeader(),
   })
 
@@ -117,17 +120,42 @@ export async function generatePAC(profileId: string): Promise<string> {
   return response.text()
 }
 
-export async function getMe(): Promise<{
-  email: string
-  admin: boolean
-}> {
-  const response = await fetch(`${API_BASE}/users/me`, {
+export async function activateProfile(profileId: string): Promise<Profile> {
+  const response = await fetch(`${API_BASE}/profiles/${profileId}/activate`, {
+    method: 'POST',
     headers: getAuthHeader(),
   })
 
   if (!response.ok) {
-    throw new Error('Failed to fetch user info')
+    const error = await response.json()
+    throw new Error(error.detail || 'Failed to activate profile')
   }
 
-  return response.json()
+  // Fetch and return the updated profile
+  const allProfiles = await getProfiles()
+  const updatedProfile = allProfiles.find((p) => p.id === profileId)
+  if (!updatedProfile) {
+    throw new Error('Profile not found after activation')
+  }
+  return updatedProfile
+}
+
+export async function deactivateProfile(profileId: string): Promise<Profile> {
+  const response = await fetch(`${API_BASE}/profiles/${profileId}/deactivate`, {
+    method: 'POST',
+    headers: getAuthHeader(),
+  })
+
+  if (!response.ok) {
+    const error = await response.json()
+    throw new Error(error.detail || 'Failed to deactivate profile')
+  }
+
+  // Fetch and return the updated profile
+  const allProfiles = await getProfiles()
+  const updatedProfile = allProfiles.find((p) => p.id === profileId)
+  if (!updatedProfile) {
+    throw new Error('Profile not found after deactivation')
+  }
+  return updatedProfile
 }

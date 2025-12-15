@@ -108,11 +108,11 @@ export function ProfileItem({
             </Group>
             {!isOwner && (
               <Text size="sm" c="dimmed">
-                Owner: {profile.owner_email}
+                Owner: {profile.owner.email}
               </Text>
             )}
             <Text size="sm" c="dimmed">
-              Limit: {profile.filter.limit || 20} proxies
+              Limit: {profile.proxies.limit || 20} proxies
             </Text>
           </Stack>
 
@@ -163,7 +163,7 @@ export function ProfileItem({
         opened={filterModalOpen}
         onClose={() => setFilterModalOpen(false)}
         onApply={handleFilterApply}
-        initialFilter={profile.filter}
+        initialFilter={profile.proxies}
       />
 
       <Modal

@@ -2,11 +2,13 @@ import { MantineProvider } from '@mantine/core'
 import { useEffect, useState } from 'react'
 import Login from './pages/Login'
 import { Home } from './pages/Home'
+import { MapPage } from './pages/Map'
 import theme from './theme'
 
 function App() {
   const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false)
   const [isLoading, setIsLoading] = useState<boolean>(true)
+  const [currentPage, setCurrentPage] = useState<'home' | 'map'>('home')
 
   useEffect(() => {
     const validateToken = async () => {
@@ -54,9 +56,13 @@ function App() {
   }
 
   return (
-    <MantineProvider theme={theme}>
+    <MantineProvider theme={theme} defaultColorScheme="dark">
       {isLoggedIn ? (
-        <Home />
+        currentPage === 'home' ? (
+          <Home onNavigateToMap={() => setCurrentPage('map')} />
+        ) : (
+          <MapPage onNavigateHome={() => setCurrentPage('home')} />
+        )
       ) : (
         <Login onLoginSuccess={() => setIsLoggedIn(true)} />
       )}

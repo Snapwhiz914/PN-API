@@ -17,11 +17,10 @@ def read_proxies(current_user: Annotated[User, Depends(get_current_user)],
     speed: int = None,
     anons: Union[List[Anonymity], None] = Query(default=None),
     reliability: float = None,
-    protocs: Union[List[int], None] = Query(default=None),
     last_check: int = None,
     accessible_websites: Union[List[str], None] = Query(default=None),
     limit: int = 20):
-    return get_alive_proxies(FilterProxies(countries=countries, regions=regions, city=city, speed=speed, reliability=reliability, anons=anons, protocs=protocs, last_check=last_check, accessible_websites=accessible_websites, limit=limit))
+    return get_alive_proxies(FilterProxies(countries=countries, regions=regions, city=city, speed=speed, reliability=reliability, anons=anons, last_check=last_check, accessible_websites=accessible_websites, limit=limit))
 
 @router.get("/location_filter_values", tags=["proxies"])
 def get_available_filter_values(current_user: Annotated[User, Depends(get_current_user)]):

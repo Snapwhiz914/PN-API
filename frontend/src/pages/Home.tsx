@@ -16,15 +16,20 @@ import {
   createProfile,
   deleteProfile,
   updateProfile,
-  generatePAC,
-  getMe,
+  activateProfile,
+  deactivateProfile,
   Profile,
   FilterProxies,
 } from '../api/profiles'
+import { getMe } from '../api/user'
 import { ProfileItem } from '../components/ProfileItem'
 import { CreateProfileModal } from '../components/CreateProfileModal'
 
-export function Home() {
+interface HomeProps {
+  onNavigateToMap?: () => void
+}
+
+export function Home({ onNavigateToMap }: HomeProps) {
   const [profiles, setProfiles] = useState<Profile[]>([])
   const [allProfiles, setAllProfiles] = useState<Profile[]>([])
   const [userEmail, setUserEmail] = useState('')
@@ -51,7 +56,7 @@ export function Home() {
         setAllProfiles(allProfs)
 
         // Filter user's own profiles
-        const userProfiles = allProfs.filter((p) => p.owner_email === userInfo.email)
+        const userProfiles = allProfs.filter((p) => p.owner.email === userInfo.email)
         setProfiles(userProfiles)
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to load profiles')
@@ -83,28 +88,26 @@ export function Home() {
   }
 
   const handleToggleActive = async (profileId: string, active: boolean) => {
-    const updated = await updateProfile(profileId, { active })
+    const updated = active ? await activateProfile(profileId) : await deactivateProfile(profileId)
     setProfiles(profiles.map((p) => (p.id === profileId ? updated : p)))
     setAllProfiles(allProfiles.map((p) => (p.id === profileId ? updated : p)))
   }
 
   const handleUpdateFilter = async (profileId: string, filter: FilterProxies) => {
-    const updated = await updateProfile(profileId, { filter })
+    const updated = await updateProfile(profileId, { proxies: filter })
     setProfiles(profiles.map((p) => (p.id === profileId ? updated : p)))
     setAllProfiles(allProfiles.map((p) => (p.id === profileId ? updated : p)))
   }
 
   const handleGeneratePAC = async (profileId: string) => {
-    const pacContent = await generatePAC(profileId)
-    const blob = new Blob([pacContent], { type: 'application/x-ns-proxy-autoconfig' })
-    const url = window.URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = `proxy-${profileId}.pac`
-    document.body.appendChild(a)
-    a.click()
-    window.URL.revokeObjectURL(url)
-    document.body.removeChild(a)
+    try {
+      const pacUrl = `${window.location.origin}/api/profiles/${profileId}/pac`
+      await navigator.clipboard.writeText(pacUrl)
+      alert('PAC link copied to clipboard!')
+    } catch (err) {
+      alert('Failed to copy link to clipboard')
+      console.error(err)
+    }
   }
 
   if (loading) {
@@ -117,14 +120,17 @@ export function Home() {
     )
   }
 
-  const otherProfiles = allProfiles.filter((p) => p.owner_email !== userEmail)
+  const otherProfiles = allProfiles.filter((p) => p.owner.email !== userEmail)
 
   return (
     <Container size="lg" py="xl">
       <Stack gap="lg">
         <Group justify="space-between" align="center">
           <Title>My Profiles</Title>
-          <Button onClick={() => setCreateModalOpen(true)}>Create Profile</Button>
+          <Group>
+            <Button onClick={() => setCreateModalOpen(true)}>Create Profile</Button>
+            {onNavigateToMap && <Button variant="light" onClick={onNavigateToMap}>View Map</Button>}
+          </Group>
         </Group>
 
         {error && (
