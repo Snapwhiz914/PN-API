@@ -20,7 +20,7 @@ async def lifespan(app: FastAPI):
     Scanner.get_instance().teardown()
 
 app = FastAPI(lifespan=lifespan)
-app.mount("/", StaticFiles(directory="frontend"), name="frontend")
+app.mount("/app", StaticFiles(directory="frontend"), name="frontend")
 app.include_router(proxies_router, prefix="/api/proxies")
 app.include_router(profiles_router, prefix="/api/profiles")
 app.include_router(scanner_router, prefix="/api/scanner")
