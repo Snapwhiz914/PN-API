@@ -539,45 +539,49 @@ export function MapPage({ onNavigateHome }: MapPageProps) {
               </Button>
             )}
           </Group>
-          <Group grow>
-            <MultiSelect
-              label="Countries"
-              placeholder="Select countries"
-              data={allCountries.map((c) => ({ value: c, label: c }))}
-              value={filters.countries}
-              onChange={(value) => {
-                handleFilterChange({ countries: value })
-                setFilters((prev) => ({ ...prev, countries: value }))
-                fetchProxies()
-              }}
-              searchable
-              clearable
-              styles={{ dropdown: { zIndex: 1000 } }}
-            />
+          <Group gap="md" wrap="wrap" style={{ width: '100%' }}>
+            <div style={{ minWidth: '250px', maxWidth: '300px' }}>
+              <MultiSelect
+                label="Countries"
+                placeholder="Select countries"
+                data={allCountries.map((c) => ({ value: c, label: c }))}
+                value={filters.countries}
+                onChange={(value) => {
+                  handleFilterChange({ countries: value })
+                  setFilters((prev) => ({ ...prev, countries: value }))
+                  fetchProxies()
+                }}
+                searchable
+                clearable
+                styles={{ dropdown: { zIndex: 1000 } }}
+              />
+            </div>
 
-            <TextInput
-              label="Region"
-              placeholder="e.g., California"
-              value={filters.region}
-              onChange={(e) => {
-                handleFilterChange({ region: e.currentTarget.value })
-                updateVisibility()
-              }}
-            />
+            <div style={{ minWidth: '180px', maxWidth: '220px' }}>
+              <TextInput
+                label="Region"
+                placeholder="e.g., California"
+                value={filters.region}
+                onChange={(e) => {
+                  handleFilterChange({ region: e.currentTarget.value })
+                  updateVisibility()
+                }}
+              />
+            </div>
 
-            <TextInput
-              label="City"
-              placeholder="e.g., New York"
-              value={filters.city}
-              onChange={(e) => {
-                handleFilterChange({ city: e.currentTarget.value })
-                updateVisibility()
-              }}
-            />
-          </Group>
+            <div style={{ minWidth: '180px', maxWidth: '220px' }}>
+              <TextInput
+                label="City"
+                placeholder="e.g., New York"
+                value={filters.city}
+                onChange={(e) => {
+                  handleFilterChange({ city: e.currentTarget.value })
+                  updateVisibility()
+                }}
+              />
+            </div>
 
-          <Group grow>
-            <div>
+            <div style={{ minWidth: '220px', maxWidth: '280px' }}>
               <Text size="sm" fw={500} mb={8}>
                 Max Speed: {filters.speed}ms
               </Text>
@@ -593,7 +597,7 @@ export function MapPage({ onNavigateHome }: MapPageProps) {
               />
             </div>
 
-            <div>
+            <div style={{ minWidth: '220px', maxWidth: '280px' }}>
               <Text size="sm" fw={500} mb={8}>
                 Checked since: {Math.floor(sliderToMinutes(lastCheckSlider) / 60)}h {sliderToMinutes(lastCheckSlider) % 60}m
               </Text>
@@ -610,36 +614,38 @@ export function MapPage({ onNavigateHome }: MapPageProps) {
                 }}
               />
             </div>
-          </Group>
 
-          <Group grow>
-            <MultiSelect
-              label="Protocols"
-              placeholder="Select protocols"
-              data={PROTOCOL_OPTIONS}
-              value={filters.protocols}
-              onChange={(value) => {
-                handleFilterChange({ protocols: value })
-                updateVisibility()
-              }}
-              searchable
-              clearable
-              styles={{ dropdown: { zIndex: 1000 } }}
-            />
+            <div style={{ minWidth: '220px', maxWidth: '280px' }}>
+              <MultiSelect
+                label="Protocols"
+                placeholder="Select protocols"
+                data={PROTOCOL_OPTIONS}
+                value={filters.protocols}
+                onChange={(value) => {
+                  handleFilterChange({ protocols: value })
+                  updateVisibility()
+                }}
+                searchable
+                clearable
+                styles={{ dropdown: { zIndex: 1000 } }}
+              />
+            </div>
 
-            <MultiSelect
-              label="Anonymity"
-              placeholder="Select anonymity levels"
-              data={ANONYMITY_OPTIONS}
-              value={filters.anonymity}
-              onChange={(value) => {
-                handleFilterChange({ anonymity: value })
-                updateVisibility()
-              }}
-              searchable
-              clearable
-              styles={{ dropdown: { zIndex: 1000 } }}
-            />
+            <div style={{ minWidth: '220px', maxWidth: '280px' }}>
+              <MultiSelect
+                label="Anonymity"
+                placeholder="Select anonymity levels"
+                data={ANONYMITY_OPTIONS}
+                value={filters.anonymity}
+                onChange={(value) => {
+                  handleFilterChange({ anonymity: value })
+                  updateVisibility()
+                }}
+                searchable
+                clearable
+                styles={{ dropdown: { zIndex: 1000 } }}
+              />
+            </div>
 
             <Flex gap="sm" align="flex-end">
               <Button
