@@ -158,3 +158,10 @@ class Blacklist:
         while self.downloading:
             time.sleep(0.001)
         self._download()
+
+    def list_available_blocklists(self):
+        list_repo_req = requests.get("http://api.github.com/repos/firehol/blocklist-ipsets/contents/", headers={"User-Agent": "pnapi"})
+        file_names = []
+        for file_obj in list_repo_req.json():
+            if file_obj["name"].endswith(".netset"): file_names.append(file_obj["name"])
+        return file_names

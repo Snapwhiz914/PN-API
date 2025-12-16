@@ -6,7 +6,7 @@ class User(BaseModel):
     id: Optional[PydanticObjectId] = None
     email: str
     password: str
-    admin: bool
+    admin: bool = False
 
 class UserRepo(AbstractRepository[User]):
    class Meta:

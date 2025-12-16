@@ -4,6 +4,7 @@ import queue
 import time
 from app.db import proxies, settings
 from app.models.proxy import Proxy
+from app.models.scanner import ScannerSettings
 from app.schemas.scanner import ScanningStatistics
 from app.scanner.checker import Checker
 from app.scanner.ipinfo import IpInfo
@@ -150,15 +151,18 @@ class Scanner:
         self.thread_kill_flag = True
         self.blacklist.update_thread_kill = True
     
-    def set_check_threads_amount(self, new_threads_amount):
-        if new_threads_amount != len(self.check_threads):
+    def hot_change_settings(self, new_settings: ScannerSettings):
+        if new_settings.num_scan_threads != len(self.check_threads):
             self.thread_kill_flag = True
             for thread in self.check_threads:
                 thread.join()
             self.thread_kill_flag = False
-            for i in range(new_threads_amount):
+            for i in range(new_settings.num_scan_threads):
                 t = threading.Thread(target=self._check)
                 self.check_threads.append(t)
                 t.start()
-            self.settings.num_scan_threads = new_threads_amount
-            settings.save(self.settings)
+        
+        if new_settings.blacklist_files != self.blacklist.blocklists:
+            self.blacklist.set_blocklist(new_settings.blacklist_files)
+        
+        self.settings.num_scan_threads = new_settings

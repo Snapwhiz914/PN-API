@@ -15,7 +15,7 @@ def read_users(current_user: Annotated[User, Security(get_current_user, scopes=[
     return list(get_all_users())
 
 @router.post("/", tags=["users"])
-def create_user(new_user: NewUser, current_user: Annotated[User, Security(get_current_user, scopes=["admin"])]):
+def endpoint_create_user(new_user: NewUser, current_user: Annotated[User, Security(get_current_user, scopes=["admin"])]):
     if create_user(new_user):
         return {"status": "success"}
     else:
@@ -26,11 +26,11 @@ def get_me(current_user: Annotated[User, Security(get_current_user)]):
     return current_user
 
 @router.post("/delete", tags=["users"])
-def delete_user(email: EmailStr, current_user: Annotated[User, Security(get_current_user, scopes=["admin"])]):
+def endpoint_delete_user(email: EmailStr, current_user: Annotated[User, Security(get_current_user, scopes=["admin"])]):
     if delete_user(email):
         return {"status": "success"}
     else:
-        raise HTTPException(status_code=500, detail="Creation was unsuccessful")
+        raise HTTPException(status_code=500, detail="Deletion was unsuccessful")
 
 def login_for_access_token(form_data: Annotated[OAuth2PasswordRequestForm, Depends()]) -> Token:
     user = authenticate_user(form_data.username, form_data.password)

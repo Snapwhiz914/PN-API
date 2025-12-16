@@ -1,10 +1,21 @@
 from pydantic import BaseModel
 from typing import List, Optional
+from datetime import datetime
 
 class ScanningStatistics(BaseModel):
     check_queue_size: int = 0
     non_blacklisted_ips: int = 0
     blacklisted_ips: int = 0
+
+class FilterHistoricPings(BaseModel):
+    uri: Optional[str] = None
+    raw_headers_keyword: Optional[str] = None
+    speed_min: Optional[float] = None
+    speed_max: Optional[float] = None
+    error_type: Optional[str] = None
+    start_date: Optional[datetime] = None
+    end_date: Optional[datetime] = None
+    limit: int = 50
 
 class WebsiteConfigUpdate(BaseModel):
     url: str

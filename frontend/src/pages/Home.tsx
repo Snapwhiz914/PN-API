@@ -27,9 +27,12 @@ import { CreateProfileModal } from '../components/CreateProfileModal'
 
 interface HomeProps {
   onNavigateToMap?: () => void
+  onNavigateToUsers?: () => void
+  onNavigateToScannerSettings?: () => void
+  onNavigateToAnalytics?: () => void
 }
 
-export function Home({ onNavigateToMap }: HomeProps) {
+export function Home({ onNavigateToMap, onNavigateToUsers, onNavigateToScannerSettings, onNavigateToAnalytics }: HomeProps) {
   const [profiles, setProfiles] = useState<Profile[]>([])
   const [allProfiles, setAllProfiles] = useState<Profile[]>([])
   const [userEmail, setUserEmail] = useState('')
@@ -129,6 +132,21 @@ export function Home({ onNavigateToMap }: HomeProps) {
           <Title>My Profiles</Title>
           <Group>
             <Button onClick={() => setCreateModalOpen(true)}>Create Profile</Button>
+            {isAdmin && (
+              <>
+                {onNavigateToUsers && (
+                  <Button variant="light" onClick={onNavigateToUsers}>
+                    Manage Users
+                  </Button>
+                )}
+                {onNavigateToScannerSettings && (
+                  <Button variant="light" onClick={onNavigateToScannerSettings}>
+                    Scanner Settings
+                  </Button>
+                )}
+              </>
+            )}
+            {onNavigateToAnalytics && <Button variant="light" onClick={onNavigateToAnalytics}>Analytics</Button>}
             {onNavigateToMap && <Button variant="light" onClick={onNavigateToMap}>View Map</Button>}
           </Group>
         </Group>

@@ -73,5 +73,8 @@ def authenticate_user(email: str, password: str):
     return user
 
 def delete_user(email: str):
-    dr = users.delete(users.find_one_by({"email": email}))
+    to_delete = users.find_one_by({"email": email})
+    if to_delete.admin:
+        return False
+    dr = users.delete(to_delete)
     return dr.deleted_count == 1

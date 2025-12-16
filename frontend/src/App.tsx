@@ -3,12 +3,15 @@ import { useEffect, useState } from 'react'
 import Login from './pages/Login'
 import { Home } from './pages/Home'
 import { MapPage } from './pages/Map'
+import { Users } from './pages/Users'
+import { ScannerSettingsPage } from './pages/ScannerSettings'
+import { Analytics } from './pages/Analytics'
 import theme from './theme'
 
 function App() {
   const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false)
   const [isLoading, setIsLoading] = useState<boolean>(true)
-  const [currentPage, setCurrentPage] = useState<'home' | 'map'>('home')
+  const [currentPage, setCurrentPage] = useState<'home' | 'map' | 'users' | 'scanner-settings' | 'analytics'>('home')
 
   useEffect(() => {
     const validateToken = async () => {
@@ -59,9 +62,15 @@ function App() {
     <MantineProvider theme={theme} defaultColorScheme="dark">
       {isLoggedIn ? (
         currentPage === 'home' ? (
-          <Home onNavigateToMap={() => setCurrentPage('map')} />
-        ) : (
+          <Home onNavigateToMap={() => setCurrentPage('map')} onNavigateToUsers={() => setCurrentPage('users')} onNavigateToScannerSettings={() => setCurrentPage('scanner-settings')} onNavigateToAnalytics={() => setCurrentPage('analytics')} />
+        ) : currentPage === 'map' ? (
           <MapPage onNavigateHome={() => setCurrentPage('home')} />
+        ) : currentPage === 'users' ? (
+          <Users onNavigateToHome={() => setCurrentPage('home')} />
+        ) : currentPage === 'scanner-settings' ? (
+          <ScannerSettingsPage onNavigateToHome={() => setCurrentPage('home')} />
+        ) : (
+          <Analytics onNavigateHome={() => setCurrentPage('home')} />
         )
       ) : (
         <Login onLoginSuccess={() => setIsLoggedIn(true)} />
