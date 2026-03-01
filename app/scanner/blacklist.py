@@ -43,6 +43,7 @@ class Blacklist:
                     continue
             else:
                 content = res.content.decode()
+                os.makedirs("app/static/blacklist", exist_ok=True)
                 f = open(f"app/static/blacklist/{list_name}", "w")
                 f.write(content)
                 f.close()

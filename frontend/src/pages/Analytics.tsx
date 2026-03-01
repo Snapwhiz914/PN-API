@@ -326,7 +326,7 @@ export function Analytics({ onNavigateHome }: AnalyticsProps) {
                     placeholder="Select start date"
                     value={filters.start_date ? new Date(filters.start_date) : null}
                     onChange={(value) =>
-                      setFilters({ ...filters, start_date: value || undefined })
+                      setFilters({ ...filters, start_date: value?.toISOString() || undefined })
                     }
                   />
                 </Grid.Col>
@@ -336,7 +336,7 @@ export function Analytics({ onNavigateHome }: AnalyticsProps) {
                     placeholder="Select end date"
                     value={filters.end_date ? new Date(filters.end_date) : null}
                     onChange={(value) =>
-                      setFilters({ ...filters, end_date: value || undefined })
+                      setFilters({ ...filters, end_date: value?.toISOString() || undefined })
                     }
                   />
                 </Grid.Col>

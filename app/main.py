@@ -1,4 +1,5 @@
 from fastapi import FastAPI, Depends
+from fastapi.responses import RedirectResponse
 from fastapi.security import OAuth2PasswordRequestForm
 from fastapi.staticfiles import StaticFiles
 import uvicorn
@@ -14,13 +15,23 @@ from typing import Annotated
 #Fix for mimetypes guessing hanging
 import mimetypes
 mimetypes.init(files=[])
+mimetypes.add_type("application/javascript", ".js")
+mimetypes.add_type("text/css", ".css")
+mimetypes.add_type("text/html", ".html")
+mimetypes.add_type("image/svg+xml", ".svg")
+mimetypes.add_type("application/json", ".json")
 
 async def lifespan(app: FastAPI):
     yield
     Scanner.get_instance().teardown()
 
 app = FastAPI(lifespan=lifespan)
-app.mount("/app", StaticFiles(directory="frontend"), name="frontend")
+
+@app.get("/")
+def root():
+    return RedirectResponse(url="/app/index.html")
+
+app.mount("/app", StaticFiles(directory="frontend/dist", html=True), name="frontend")
 app.include_router(proxies_router, prefix="/api/proxies")
 app.include_router(profiles_router, prefix="/api/profiles")
 app.include_router(scanner_router, prefix="/api/scanner")
